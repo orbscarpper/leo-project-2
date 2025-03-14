@@ -31,7 +31,8 @@ resource "aws_vpc" "devops_vpc" {
 }
 
 #********************************************************************************
-# Add a public subnet resource
+# Add public subnet resources
+
 resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.devops_vpc.id #associate subnet with the VPC created earlier
   cidr_block              = "10.0.41.0/24"
@@ -42,6 +43,17 @@ resource "aws_subnet" "public_subnet" {
     Name = "public-subnet-devops"
   }
 }
+resource "aws_subnet" "public_subnet_2" {
+  vpc_id                  = aws_vpc.devops_vpc.id  
+  cidr_block              = "10.0.64.0/24"         
+  map_public_ip_on_launch = true                    
+  availability_zone       = "us-west-2b"           
+
+  tags = {
+    Name = "public-subnet-devops-2"
+  }
+}
+
 
 # Add an Internet Gateway (IGW) to provide Internet access
 resource "aws_internet_gateway" "igw" {
@@ -302,4 +314,65 @@ resource "aws_instance" "database" {
   tags = {
     Name = "Database-Server"
   }
+}
+
+# Create an Application Load Balancer (ALB)
+resource "aws_lb" "frontend_alb" {
+  name               = "frontend-alb"
+  internal           = false # Make it accessible from the internet
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = [
+    aws_subnet.public_subnet.id,   
+    aws_subnet.public_subnet_2.id 
+  ]
+  
+  enable_deletion_protection = false
+  tags = {
+    Name = "Frontend-ALB"
+  }
+}
+
+# Add a listener for the ALB (for HTTP traffic on port 80)
+resource "aws_lb_listener" "frontend_alb_listener" {
+  load_balancer_arn = aws_lb.frontend_alb.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "fixed-response"
+    fixed_response {
+      status_code = 200
+      content_type = "text/plain"
+      message_body = "ALB is working!"
+    }
+  }
+}
+
+# Add a target group for the frontend EC2 instances
+resource "aws_lb_target_group" "frontend_target_group" {
+  name     = "frontend-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.devops_vpc.id
+
+  health_check {
+    protocol = "HTTP"
+    path     = "/"
+    interval = 30
+    timeout  = 5
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+  }
+
+  tags = {
+    Name = "Frontend-Target-Group"
+  }
+}
+
+# Register frontend EC2 instances with the target group
+resource "aws_lb_target_group_attachment" "frontend_attachment" {
+  target_group_arn = aws_lb_target_group.frontend_target_group.arn
+  target_id        = aws_instance.frontend.id
+  port             = 80
 }
