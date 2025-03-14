@@ -3,11 +3,16 @@ provider "aws" {
   region = "us-west-2"
 }
 
+# Data resource to get the existing VPC by its ID
+data "aws_vpc" "main_vpc" {
+  id = "vpc-026c0966fe3ce6ffc"  # Replace with your actual VPC ID
+}
+
 # Security Group for ALB (public access for frontend services)
 resource "aws_security_group" "alb_sg" {
   name        = "alb-sg"
   description = "Allow HTTP/HTTPS traffic from the internet"
-  vpc_id      = aws_vpc.main_vpc.id
+  vpc_id      = data.aws_vpc.main_vpc.id  # Correct reference to the existing VPC
 
   # Inbound rules
   ingress {
@@ -41,7 +46,7 @@ resource "aws_security_group" "alb_sg" {
 resource "aws_security_group" "frontend_sg" {
   name        = "frontend-sg"
   description = "Allow ALB traffic to frontend services"
-  vpc_id      = aws_vpc.main_vpc.id
+  vpc_id      = data.aws_vpc.main_vpc.id  # Correct reference to the existing VPC
 
   # Inbound rule - ALB to Frontend services
   ingress {
@@ -75,7 +80,7 @@ resource "aws_security_group" "frontend_sg" {
 resource "aws_security_group" "worker_sg" {
   name        = "worker-sg"
   description = "Allow communication with Redis and Postgres"
-  vpc_id      = aws_vpc.main_vpc.id
+  vpc_id      = data.aws_vpc.main_vpc.id  # Correct reference to the existing VPC
 
   # Inbound rule - Allow communication from frontend (Vote/Result) and Redis
   ingress {
@@ -109,7 +114,7 @@ resource "aws_security_group" "worker_sg" {
 resource "aws_security_group" "redis_sg" {
   name        = "redis-sg"
   description = "Allow communication from Worker on Redis port (6379)"
-  vpc_id      = aws_vpc.main_vpc.id
+  vpc_id      = data.aws_vpc.main_vpc.id  # Correct reference to the existing VPC
 
   # Inbound rule - Allow communication from Worker
   ingress {
@@ -136,7 +141,7 @@ resource "aws_security_group" "redis_sg" {
 resource "aws_security_group" "postgres_sg" {
   name        = "postgres-sg"
   description = "Allow communication from Worker on Postgres port (5432)"
-  vpc_id      = aws_vpc.main_vpc.id
+  vpc_id      = data.aws_vpc.main_vpc.id  # Correct reference to the existing VPC
 
   # Inbound rule - Allow communication from Worker
   ingress {
