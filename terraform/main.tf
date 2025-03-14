@@ -263,3 +263,43 @@ resource "aws_security_group" "postgres_sg" {
     Name = "postgres-sg"
   }
 }
+
+
+#EC2 Instance for Frontend (Vote & Result services)
+resource "aws_instance" "frontend" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.private_subnet.id
+  security_groups        = [aws_security_group.frontend_sg.id]
+  key_name               = data.aws_key_pair.ssh_key.key_name 
+
+  tags = {
+    Name = "Frontend-Server"
+  }
+}
+
+# EC2 Instance for Backend (Redis & Worker services)
+resource "aws_instance" "backend" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.private_subnet.id
+  security_groups        = [aws_security_group.worker_sg.id]
+  key_name               = data.aws_key_pair.ssh_key.key_name
+
+  tags = {
+    Name = "Backend-Server"
+  }
+}
+
+# EC2 Instance for Database (PostgreSQL)
+resource "aws_instance" "database" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.private_subnet.id
+  security_groups        = [aws_security_group.postgres_sg.id]
+  key_name               = data.aws_key_pair.ssh_key.key_name
+
+  tags = {
+    Name = "Database-Server"
+  }
+}
