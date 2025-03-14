@@ -1,6 +1,6 @@
 # Define the AWS provider and region
 provider "aws" {
-  region = "us-east-2"
+  region = "us-west-2"
 }
 
 # Security Group for ALB (public access for frontend services)
