@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "VfghLS79kww=",
+  "dgSpecHash": "l13BGR7ZZJY=",
   "success": true,
-  "projectFilePath": "/Users/diogobarros/diogo_ironhack/example-voting-app/worker/Worker.csproj",
+  "projectFilePath": "/Users/diogobarros/devOps-infrastructure-automation/ironhack-project-1/worker/Worker.csproj",
   "expectedPackageFiles": [
     "/Users/diogobarros/.nuget/packages/microsoft.extensions.logging.abstractions/6.0.0/microsoft.extensions.logging.abstractions.6.0.0.nupkg.sha512",
     "/Users/diogobarros/.nuget/packages/microsoft.netcore.platforms/5.0.0/microsoft.netcore.platforms.5.0.0.nupkg.sha512",

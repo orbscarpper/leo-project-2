@@ -906,11 +906,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/diogobarros/diogo_ironhack/example-voting-app/worker/Worker.csproj",
+      "projectUniqueName": "/Users/diogobarros/devOps-infrastructure-automation/ironhack-project-1/worker/Worker.csproj",
       "projectName": "Worker",
-      "projectPath": "/Users/diogobarros/diogo_ironhack/example-voting-app/worker/Worker.csproj",
+      "projectPath": "/Users/diogobarros/devOps-infrastructure-automation/ironhack-project-1/worker/Worker.csproj",
       "packagesPath": "/Users/diogobarros/.nuget/packages/",
-      "outputPath": "/Users/diogobarros/diogo_ironhack/example-voting-app/worker/obj/",
+      "outputPath": "/Users/diogobarros/devOps-infrastructure-automation/ironhack-project-1/worker/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/diogobarros/.nuget/NuGet/NuGet.Config"
