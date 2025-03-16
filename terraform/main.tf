@@ -19,6 +19,7 @@ data "aws_ami" "ubuntu" {
 
   owners = ["099720109477"] # belongs to Canonical, the official provider of Ubuntu AMIs
 }
+/***************************** VPC Configuration ***********************************/
 # Create a VPC with a CIDR block
 resource "aws_vpc" "devops_vpc" {
   cidr_block           = "10.0.0.0/16"
@@ -30,7 +31,6 @@ resource "aws_vpc" "devops_vpc" {
   }
 }
 
-#********************************************************************************
 # Add a public subnet resource
 resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.devops_vpc.id #associate subnet with the VPC created earlier
@@ -73,8 +73,9 @@ resource "aws_route_table_association" "public_rt_assoc" {
   route_table_id = aws_route_table.public_rt.id
 }
 
-#********************************************************************************
+/********************************************************************************/
 # Add a private subnet
+/*
 resource "aws_subnet" "private_subnet" {
   vpc_id                  = aws_vpc.devops_vpc.id #associate subnet with the VPC created earlier
   cidr_block              = "10.0.42.0/24"
@@ -123,10 +124,83 @@ resource "aws_route_table" "private_rt" {
 resource "aws_route_table_association" "private_rt_assoc" {
   subnet_id      = aws_subnet.private_subnet.id
   route_table_id = aws_route_table.private_rt.id
+} 
+*/
+/****************** Use module block to instantiate 3 private subnets ***************************/
+module "private_subnet_1" {
+  source            = "./modules/private-subnet"
+  vpc_id            = aws_vpc.devops_vpc.id # Use ID of vpc as the value for the vpc_id variable inside the private-subnet module. 
+  cidr_block        = "10.0.42.0/24"
+  availability_zone = "us-west-2b"
+  subnet_name       = "private-subnet-1"
 }
 
+module "private_subnet_2" {
+  source            = "./modules/private-subnet"
+  vpc_id            = aws_vpc.devops_vpc.id 
+  cidr_block        = "10.0.43.0/24"
+  availability_zone = "us-west-2c" 
+  subnet_name       = "private-subnet-2"
+}
 
+module "private_subnet_3" {
+  source            = "./modules/private-subnet"
+  vpc_id            = aws_vpc.devops_vpc.id
+  cidr_block        = "10.0.44.0/24"
+  availability_zone = "us-west-2d" 
+  subnet_name       = "private-subnet-3"
+}
 
+# NAT Gateway requires an Elastic IP (EIP) to allow outbound internet access
+resource "aws_eip" "nat_gw_ip" {
+  domain = "vpc"
+
+  tags = {
+    Name = "NAT-Gateway-EIP"
+  }
+}
+
+# Create a NAT Gateway
+resource "aws_nat_gateway" "nat_gw" {
+  allocation_id = aws_eip.nat_gw_ip.id
+  subnet_id     = aws_subnet.public_subnet.id  # the NAT Gateway will be placed in the public subnet to allow private subnet instances to access the internet
+
+  tags = {
+    Name = "NAT-Gateway"
+  }
+}
+
+#Create a Route Table for the Private Subnet
+resource "aws_route_table" "private_rt" {
+  vpc_id = aws_vpc.devops_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_gw.id
+  }
+
+  tags = {
+    Name = "PrivateRouteTable"
+  }
+}
+
+# Associate the PrivateRouteTable with the Private Subnet 1.
+resource "aws_route_table_association" "private_rt_assoc" {
+  subnet_id      = module.private_subnet_3.subnet_id
+  route_table_id = aws_route_table.private_rt.id
+}
+
+output "private_subnet_1_id" {
+  value = module.private_subnet_1.subnet_id
+}
+
+output "private_subnet_2_id" {
+  value = module.private_subnet_2.subnet_id
+}
+
+output "private_subnet_3_id" {
+  value = module.private_subnet_3.subnet_id
+}
 
 
 
