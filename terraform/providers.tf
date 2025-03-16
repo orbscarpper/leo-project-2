@@ -7,6 +7,7 @@ terraform {
     }
   }
 
+# Store terraform state file in a remote backend(S3) and enable state locking using DynamoDB
   backend "s3" {
     bucket         = "devops-s3-bucket-terraform-state-storage"  
     key            = "terraform.tfstate"          
