@@ -258,6 +258,21 @@ resource "aws_security_group" "frontend_sg" {
     security_groups = [aws_security_group.alb_sg.id]  # Only ALB can access
   }
 
+  ingress {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      security_groups = [aws_security_group.bastion_sg.id] # Allow SSH from Bastion
+    }
+
+  egress {
+  from_port       = 6379
+  to_port         = 6379
+  protocol        = "tcp"
+  security_groups = [aws_security_group.redis_sg.id]  # Allow connection to Redis
+}
+
+# not sure about this??
   egress {
     from_port   = 0
     to_port     = 0
@@ -280,15 +295,22 @@ resource "aws_security_group" "worker_sg" {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    security_groups = [aws_security_group.frontend_sg.id]
+    security_groups = [aws_security_group.redis_sg.id] 
   }
 
   ingress {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    security_groups = [aws_security_group.frontend_sg.id]
+    security_groups = [aws_security_group.postgres_sg.id] 
   }
+
+  ingress {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      security_groups = [aws_security_group.bastion_sg.id] # Allow SSH from Bastion
+    }
 
   egress {
     from_port   = 0
@@ -305,21 +327,28 @@ resource "aws_security_group" "worker_sg" {
 # Security Group for Redis
 resource "aws_security_group" "redis_sg" {
   name        = "redis-sg"
-  description = "Allow communication from Worker on Redis port (6379)"
+  description = "Allow communication from Frontend on Redis port (6379)"
   vpc_id      = aws_vpc.devops_vpc.id
 
   ingress {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    security_groups = [aws_security_group.worker_sg.id]
+    security_groups = [aws_security_group.frontend_sg.id]
   }
+
+  ingress {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      security_groups = [aws_security_group.bastion_sg.id] # Allow SSH from Bastion
+    }
 
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["10.0.0.0/16"]  # Restrict traffic to VPC only, within the private subnet
   }
 
   tags = {
@@ -340,11 +369,18 @@ resource "aws_security_group" "postgres_sg" {
     security_groups = [aws_security_group.worker_sg.id]
   }
 
+  ingress {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      security_groups = [aws_security_group.bastion_sg.id] # Allow SSH from Bastion
+    }
+
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+     cidr_blocks = ["10.0.0.0/16"] # should only allow traffic within the private subnet
   }
 
   tags = {
@@ -358,7 +394,7 @@ resource "aws_instance" "votes" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.private_subnet.id
-  security_groups        = [aws_security_group.frontend_sg.id]
+  security_groups        = [aws_security_group.frontend_sg.id] 
   key_name               = data.aws_key_pair.ssh_key.key_name 
 
   tags = {
@@ -506,7 +542,8 @@ resource "aws_security_group" "bastion_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = var.allowed_ssh_ips  
+    #cidr_blocks = var.allowed_ssh_ips
+    cidr_blocks = ["0.0.0.0/0"] # allow form all I.Ps
   }
 
   # Ingress: Allow SSH access only from specific security groups (for Bastion -> private instances)

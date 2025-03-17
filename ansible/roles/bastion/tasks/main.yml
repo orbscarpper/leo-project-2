@@ -1,15 +1,37 @@
 ---
-# - name: Install Ansible on Bastion host
-#   hosts: bastion # Use the hostname or IP from your inventory
-#   become: yes
-#   tasks:
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: yes
 
-- name: Install Python and Ansible
+- name: Install required packages
   ansible.builtin.apt:
     name:
-      - python3-pip
       - ansible
+      - python3-pip
+      - unzip
+      - git
     state: present
+
+- name: Ensure SSH key exists
+  ansible.builtin.copy:
+    src: ~/.ssh/vpc-connection-key.pem
+    dest: /home/ubuntu/.ssh/vpc-connection-key.pem
+    mode: '0600'
+    owner: ubuntu
+    group: ubuntu
+
+- name: Allow SSH Agent Forwarding
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/ssh_config
+    line: "ForwardAgent yes"
+    state: present
+
+- name: Add private IPs of instances to known hosts
+  ansible.builtin.shell: ssh-keyscan {{ item }} >> /home/ubuntu/.ssh/known_hosts
+  loop:
+    - "10.0.42.162"  # frontend-vote-instance
+    - "10.0.42.51"   # frontend-result-instance
+    - "10.0.42.129"  # backend-instance
+    - "10.0.42.227"  # redis-instance
+    - "10.0.42.12"   # database-instance
+  ignore_errors: yes
