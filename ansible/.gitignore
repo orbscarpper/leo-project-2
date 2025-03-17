@@ -1,0 +1,2 @@
+ansible/roles/redis/vars/secrets.yml
+ansible/roles/database/vars/secrets.yml

@@ -1,0 +1,35 @@
+---
+- name: Pull Docker image and delpoy result
+  hosts: frontend_result
+  become: yes
+  tasks:
+    - name: Pull the Docker image
+      community.docker.docker_image:
+        name: mirmika/result
+        source: pull
+
+    - name: Create and start the Docker container
+      community.docker.docker_container:
+        name: result_app_container
+        image: mirmika/result
+        state: started
+        restart_policy: always
+        ports:
+          - "80:80"
+        volumes:
+          - /ubuntu/home/result:/app
+        command: "/bin/bash -c 'cd /app && npm ci && node server.js'"
+        environment:
+          NODE_ENV: production
+
+    - name: Wait for the application to start
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 80
+        delay: 10
+        timeout: 60
+      when: server_process.rc == 0
+
+    - name: Display success message
+      debug:
+        msg: "The Result App is now running on http://localhost:80"
