@@ -1,0 +1,36 @@
+---
+- name: Pull Docker image, create container, install dependencies, and run the Vote App
+  hosts: frontend-vote 
+  become: yes  
+  tasks:
+    - name: Pull the Python Docker image
+      community.docker.docker_image:
+        name: python:3.9  
+        source: pull
+
+    - name: Create and start the Docker container
+      community.docker.docker_container:
+        name: vote_app_container  
+        image: python:3.9  
+        state: started
+        restart_policy: always  # This ensures the container restarts on failure
+        ports:
+          - "5000:5000"  
+        volumes:
+          - /ubuntu/home/vote:/app  # Mount the host directory to the container's app directory
+        command: "/bin/bash -c 'cd /app && pip install -r requirements.txt && python app.py'"  # Install dependencies and run the app
+        environment:
+          FLASK_APP: app.py  # Optional: Set environment variables for the app
+          FLASK_ENV: production  # Optional: Set the environment (production or development)
+
+    - name: Wait for the application to start
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 5000
+        delay: 10
+        timeout: 60
+      when: server_process.rc == 0  # Wait for the application only if the previous task succeeded
+
+    - name: Display success message
+      debug:
+        msg: "The Vote App is now running on http://localhost:5000"

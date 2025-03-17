@@ -1,0 +1,35 @@
+---
+- name: Pull Docker image, create container, install dependencies, and run the application
+  hosts: frontend-result 
+  become: yes 
+  tasks:
+    - name: Pull the Docker image
+      community.docker.docker_image:
+        name: mirmika/result  
+        source: pull
+
+    - name: Create and start the Docker container
+      community.docker.docker_container:
+        name: result_app_container  
+        image: mirmika/result  
+        state: started
+        restart_policy: always  
+        ports:
+          - "80:80"  
+        volumes:
+          - /ubuntu/home/result:/app  # Mount the host directory to the container's app directory
+        command: "/bin/bash -c 'cd /app && npm ci && node server.js'"  # Install dependencies and start the app
+        environment:
+          NODE_ENV: production  # Optional: Set environment variables for the app
+
+    - name: Wait for the application to start
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 80
+        delay: 10
+        timeout: 60
+      when: server_process.rc == 0  # Wait for the application only if the previous task succeeded
+
+    - name: Display success message
+      debug:
+        msg: "The Result App is now running on http://localhost:80"
