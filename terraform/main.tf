@@ -391,12 +391,12 @@ resource "aws_instance" "redis" {
   key_name               = data.aws_key_pair.ssh_key.key_name
 
   tags = {
-    Name = "Backend-Server"
+    Name = "Redis-Server"
   }
 }
 
 # EC2 Instance for Backend (Worker service)
-resource "aws_instance" "backend" {
+resource "aws_instance" "worker" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.private_subnet.id
@@ -407,7 +407,7 @@ resource "aws_instance" "backend" {
   key_name               = data.aws_key_pair.ssh_key.key_name
 
   tags = {
-    Name = "Backend-Server"
+    Name = "Worker-Server"
   }
 }
 
