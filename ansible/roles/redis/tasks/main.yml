@@ -25,3 +25,32 @@
         name: ubuntu
         groups: docker
         append: yes
+---
+- name: Pull Docker image, create Redis container, and configure networking
+  hosts: redis
+  become: yes
+  tasks:
+    - name: Create Docker network (if it doesn't exist)
+      docker_network:
+        name: back-tier
+        state: present
+
+    - name: Start Redis Container
+      docker_container:
+        name: redis
+        image: redis:7-alpine
+        state: started
+        restart_policy: always
+        env:
+          REDIS_PASSWORD: "redispassword"
+        volumes:
+          - "redis-data:/data"
+        networks:
+          - name: back-tier
+        ports:
+          - "6379:6379"  # Expose Redis port to the host machine
+
+    - name: Ensure redis-data volume exists
+      docker_volume:
+        name: redis-data
+        state: present
