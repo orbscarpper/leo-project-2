@@ -46,3 +46,15 @@ variable "dynamodb_table_name" {
   type    = string
   default = "devops-terraform-state-lock" 
 }
+
+variable "bastion_instance_type" {
+  description = "Instance type for the bastion host"
+  type        = string
+  default     = "t2.micro"
+}
+
+variable "allowed_ssh_ips" {
+  description = "CIDR blocks allowed to access bastion via SSH"
+  type        = list(string)
+  default     = ["37.201.7.48/32", "192.168.18.133/32", "192.168.56.1/32"]
+}

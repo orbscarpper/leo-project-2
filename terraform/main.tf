@@ -494,6 +494,60 @@ resource "aws_lb_target_group_attachment" "frontend_attachment_results" {
   port             = 80
 }
 
+/**************************** Configure a Bastion host *****************************************/
+# define security group for a Bastian host
+resource "aws_security_group" "bastion_sg" {
+  name        = "bastion-sg"
+  description = "Allow SSH from trusted IPs to Bastion Host only"
+  vpc_id      = aws_vpc.devops_vpc.id
+
+  # Ingress: Allow SSH only from a trusted IP (you can add more IPs as needed)
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_ssh_ips  
+  }
+
+  # Ingress: Allow SSH access only from specific security groups (for Bastion -> private instances)
+  /*
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    security_groups = [
+      aws_security_group.frontend_sg.id,
+      aws_security_group.worker_sg.id,
+      aws_security_group.postgres_sg.id,
+      aws_security_group.redis_sg.id
+    ]
+  } */
+   # Egress: Allow Bastion to reach private subnets and other necessary resources
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["10.0.0.0/16"]  # Private subnet IP range
+  }
+
+  tags = {
+    Name = "bastion-sg"
+  }
+}
+
+# EC2 Instance for Bastion Host
+resource "aws_instance" "bastion" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.bastion_instance_type
+  subnet_id              = aws_subnet.public_subnet.id # Public subnet for Bastion
+			  		   
+  security_groups        = [aws_security_group.bastion_sg.id]
+  key_name               = data.aws_key_pair.ssh_key.key_name
+  tags = {
+    Name = "Bastion-Host"
+  }
+}
+
 
 
 
