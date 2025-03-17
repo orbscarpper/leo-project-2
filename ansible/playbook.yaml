@@ -1,0 +1,18 @@
+---
+- name: Configure Bastion Host
+  hosts: bastion
+  become: true
+  roles:
+    - bastion
+
+- name: Deploy Voting App
+  hosts: all
+  become: true
+  roles:
+    - docker
+    - common
+    - frontend-votes
+    - frontend-results
+    - backend
+    - redis
+    - database
