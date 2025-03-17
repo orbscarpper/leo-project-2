@@ -1,0 +1,12 @@
+---
+- name: Install Ansible on Bastion host
+  hosts: bastion # Use the hostname or IP from your inventory
+  become: yes
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+    - name: Install Ansible
+      ansible.builtin.apt:
+        name: ansible
+        state: present
