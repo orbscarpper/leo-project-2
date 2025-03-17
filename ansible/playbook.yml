@@ -5,8 +5,8 @@
   roles:
     - docker
     - bastion
-    - frontend-votes
-    - frontend-results
+    - frontend_votes
+    - frontend_results
     - backend
     - redis
     - database

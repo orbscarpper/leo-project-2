@@ -1,53 +1,53 @@
----
-- name: Deploy Worker Service on EC2
-  hosts: backend-instance
-  become: true
-  vars_files:
-    - roles/database/vars/secrets.yml
-  vars:
-    worker_image: mirmika/worker:latest
-    container_name: worker_service_container
-    redis_host: redis-instance
-    postgres_host: database-instance
-    postgres_db: votes
-    postgres_user: postgres_user
-    worker_command: "/bin/bash -c 'dotnet build && dotnet run'"
-  tasks:
-    - name: Pull Worker Docker image
-      community.docker.docker_image:
-        name: "{{ worker_image }}"
-        source: pull
+# ---
+# - name: Deploy Worker Service on EC2
+#   hosts: backend-instance
+#   become: true
+#   vars_files:
+#     - roles/database/vars/secrets.yml
+#   vars:
+#     worker_image: mirmika/worker:latest
+#     container_name: worker_service_container
+#     redis_host: redis-instance
+#     postgres_host: database-instance
+#     postgres_db: votes
+#     postgres_user: postgres_user
+#     worker_command: "/bin/bash -c 'dotnet build && dotnet run'"
+#   tasks:
+- name: Pull Worker Docker image
+  community.docker.docker_image:
+    name: "{{ worker_image }}"
+    source: pull
 
-    - name: Create and start Worker container
-      community.docker.docker_container:
-        name: "{{ container_name }}"
-        image: "{{ worker_image }}"
-        state: started
-        restart_policy: always
-        volumes:
-          - "/ubuntu/home/worker:/app"
-        command: "{{ worker_command }}"
-        environment:
-          REDIS_HOST: "{{ redis_host }}"
-          POSTGRES_HOST: "{{ postgres_host }}"
-          POSTGRES_DB: "{{ postgres_db }}"
-          POSTGRES_USER: "{{ postgres_user }}"
-          POSTGRES_PASSWORD: "{{ db_password }}"
+- name: Create and start Worker container
+  community.docker.docker_container:
+    name: "{{ container_name }}"
+    image: "{{ worker_image }}"
+    state: started
+    restart_policy: always
+    volumes:
+      - "/ubuntu/home/worker:/app"
+    command: "{{ worker_command }}"
+    environment:
+      REDIS_HOST: "{{ redis_host }}"
+      POSTGRES_HOST: "{{ postgres_host }}"
+      POSTGRES_DB: "{{ postgres_db }}"
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_PASSWORD: "{{ db_password }}"
 
-    - name: Wait for Redis
-      ansible.builtin.wait_for:
-        host: "{{ redis_host }}"
-        port: 6379
-        delay: 10
-        timeout: 60
+- name: Wait for Redis
+  ansible.builtin.wait_for:
+    host: "{{ redis_host }}"
+    port: 6379
+    delay: 10
+    timeout: 60
 
-    - name: Wait for Worker service
-      ansible.builtin.wait_for:
-        host: "{{ ansible_host }}"
-        port: 80
-        delay: 10
-        timeout: 60
+- name: Wait for Worker service
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: 80
+    delay: 10
+    timeout: 60
 
-    - name: Success message
-      debug:
-        msg: "Worker service is running and processing votes."
+- name: Success message
+  debug:
+    msg: "Worker service is running and processing votes."
