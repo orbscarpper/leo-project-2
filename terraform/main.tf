@@ -83,7 +83,60 @@ resource "aws_route_table_association" "public_rt_assoc" {
   subnet_id      = aws_subnet.public_subnet.id
   route_table_id = aws_route_table.public_rt.id
 }
+
+# Add a private subnet
+resource "aws_subnet" "private_subnet" {
+  vpc_id                  = aws_vpc.devops_vpc.id #associate subnet with the VPC created earlier
+  cidr_block              = "10.0.42.0/24"
+  map_public_ip_on_launch = false   # No public IP for private subnet
+  availability_zone       = "us-west-2b" 
+
+  tags = {
+    Name = "private-subnet-devops"
+  }
+}
+
+# NAT Gateway requires an Elastic IP (EIP) to allow outbound internet access
+resource "aws_eip" "nat_gw_ip" {
+  domain = "vpc"
+
+  tags = {
+    Name = "NAT-Gateway-EIP"
+  }
+}
+
+# Create a NAT Gateway
+resource "aws_nat_gateway" "nat_gw" {
+  allocation_id = aws_eip.nat_gw_ip.id
+  subnet_id     = aws_subnet.public_subnet.id  # the NAT Gateway will be placed in the public subnet to allow private subnet instances to access the internet
+
+  tags = {
+    Name = "NAT-Gateway"
+  }
+}
+
+#Create a Route Table for the Private Subnet
+resource "aws_route_table" "private_rt" {
+  vpc_id = aws_vpc.devops_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_gw.id
+  }
+
+  tags = {
+    Name = "PrivateRouteTable"
+  }
+}
+
+# Associate the PrivateRouteTable with the Private Subnet
+resource "aws_route_table_association" "private_rt_assoc" {
+  subnet_id      = aws_subnet.private_subnet.id
+  route_table_id = aws_route_table.private_rt.id
+} 
+
 /****************** Use module block to instantiate 3 private subnets ***************************/
+/*
 module "private_subnet_1" {
   source            = "./modules/private-subnet"
   vpc_id            = aws_vpc.devops_vpc.id # Use ID of vpc as the value for the vpc_id variable inside the private-subnet module. 
@@ -159,7 +212,7 @@ output "private_subnet_3_id" {
   value = module.private_subnet_3.subnet_id
 }
 
-
+*/
 # Security Group for ALB (public access for frontend services)
 resource "aws_security_group" "alb_sg" {
   name        = "alb-sg"
@@ -300,8 +353,8 @@ resource "aws_security_group" "postgres_sg" {
 }
 
 
-#EC2 Instance for Frontend (Vote & Result services)
-resource "aws_instance" "frontend" {
+#EC2 Instance for Frontend (Votes)
+resource "aws_instance" "votes" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.private_subnet.id
@@ -309,16 +362,48 @@ resource "aws_instance" "frontend" {
   key_name               = data.aws_key_pair.ssh_key.key_name 
 
   tags = {
-    Name = "Frontend-Server"
+    Name = "Vote-Server"
   }
 }
 
-# EC2 Instance for Backend (Redis & Worker services)
+#EC2 Instance for Frontend (Results) 
+resource "aws_instance" "results" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.private_subnet.id
+  security_groups        = [aws_security_group.frontend_sg.id]
+  key_name               = data.aws_key_pair.ssh_key.key_name 
+
+  tags = {
+    Name = "Result-Server"
+  }
+}
+
+# EC2 Instance for Backend (Redis service)
+resource "aws_instance" "redis" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.private_subnet.id
+  security_groups        = [
+      aws_security_group.worker_sg.id,  # Allow communication from Worker
+      aws_security_group.frontend_sg.id # Allow communication from Frontend
+    ]
+  key_name               = data.aws_key_pair.ssh_key.key_name
+
+  tags = {
+    Name = "Backend-Server"
+  }
+}
+
+# EC2 Instance for Backend (Worker service)
 resource "aws_instance" "backend" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.private_subnet.id
-  security_groups        = [aws_security_group.worker_sg.id]
+  security_groups        = [
+      aws_security_group.redis_sg.id, 
+      aws_security_group.postgres_sg.id
+    ]
   key_name               = data.aws_key_pair.ssh_key.key_name
 
   tags = {
@@ -331,7 +416,10 @@ resource "aws_instance" "database" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.private_subnet.id
-  security_groups        = [aws_security_group.postgres_sg.id]
+  security_groups        = [
+      aws_security_group.redis_sg.id, 
+      aws_security_group.postgres_sg.id
+    ]
   key_name               = data.aws_key_pair.ssh_key.key_name
 
   tags = {
@@ -394,9 +482,15 @@ resource "aws_lb_target_group" "frontend_target_group" {
 }
 
 # Register frontend EC2 instances with the target group
-resource "aws_lb_target_group_attachment" "frontend_attachment" {
+resource "aws_lb_target_group_attachment" "frontend_attachment_votes" {
   target_group_arn = aws_lb_target_group.frontend_target_group.arn
-  target_id        = aws_instance.frontend.id
+  target_id        = aws_instance.votes.id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "frontend_attachment_results" {
+  target_group_arn = aws_lb_target_group.frontend_target_group.arn
+  target_id        = aws_instance.results.id
   port             = 80
 }
 
