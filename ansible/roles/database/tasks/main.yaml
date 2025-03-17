@@ -1,0 +1,35 @@
+---
+- name: Pull Docker image, create container, install dependencies, and run the application
+  hosts: database  
+  become: yes
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Create Docker network (if it doesn't exist)
+      docker_network:
+        name: back-tier
+        state: present
+
+    - name: Start PostgreSQL Container
+      docker_container:
+        name: db
+        image: postgres:15-alpine
+        state: started
+        restart_policy: always
+        env:
+          POSTGRES_USER: "postgres"
+          POSTGRES_PASSWORD: "postgres"
+        volumes:
+          - "db-data:/var/lib/postgresql/data"
+        networks:
+          - name: back-tier
+        ports:
+          - "5432:5432"  # Expose PostgreSQL port to the host machine, for worker and result
+
+    - name: Ensure db-data volume exists
+      docker_volume:
+        name: db-data
+        state: present
