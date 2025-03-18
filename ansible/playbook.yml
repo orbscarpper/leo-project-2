@@ -3,10 +3,22 @@
   hosts: all
   become: true
   roles:
-    - {role: docker, }
-    - {role: bastion, when: "'bastion-instance' in bastion"}
-    - {role: frontend_votes, when: "'frontend-vote-instance' in frontend_vote"}
-    - {role: frontend_results, when: "'frontend-result-instance' in frontend_result"}
-    - {role: backend, when: "'backend-instance' in backend"}
-    - {role: redis, when: "'redis-instance' in redis"}
-    - {role: database, when: "'database-instance' in database"}
+    - role: docker
+
+    - role: bastion
+      when: "'bastion' in group_names"
+
+    - role: frontend_votes
+      when: "'frontend_vote' in group_names"
+
+    - role: frontend_results
+      when: "'frontend_result' in group_names"
+
+    - role: backend
+      when: "'backend' in group_names"
+
+    - role: redis
+      when: "'redis' in group_names"
+
+    - role: database
+      when: "'database' in group_names"
