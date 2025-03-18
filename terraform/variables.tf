@@ -56,5 +56,5 @@ variable "bastion_instance_type" {
 variable "allowed_ssh_ips" {
   description = "CIDR blocks allowed to access bastion via SSH"
   type        = list(string)
-  default     = ["37.201.7.48/32", "192.168.18.133/32", "192.168.56.1/32", "59.103.113.145/32"]
+  default     = ["37.201.7.48/32", "192.168.56.1/32", "59.103.113.145/32"]
 }

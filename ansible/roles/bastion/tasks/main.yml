@@ -29,9 +29,9 @@
 - name: Add private IPs of instances to known hosts
   ansible.builtin.shell: ssh-keyscan {{ item }} >> /home/ubuntu/.ssh/known_hosts
   loop:
-    - "10.0.42.162"  # frontend-vote-instance
-    - "10.0.42.51"   # frontend-result-instance
-    - "10.0.42.129"  # backend-instance
-    - "10.0.42.227"  # redis-instance
-    - "10.0.42.12"   # database-instance
+    - "10.0.42.228"  # frontend-vote-instance
+    - "10.0.42.26"   # frontend-result-instance
+    - "10.0.42.226"  # backend-instance
+    - "10.0.42.61"  # redis-instance
+    - "10.0.42.140"   # database-instance
   ignore_errors: yes
