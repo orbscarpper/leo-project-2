@@ -2,10 +2,6 @@
 # - name: Install Docker on EC2 instances
 #   become: true
 #   tasks:
-- name: Update apt cache
-  hosts: all
-  ansible.builtin.apt:
-    update_cache: yes
 - name: Update apt packages (Ubuntu)
   apt:
     update_cache: 

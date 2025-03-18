@@ -13,10 +13,6 @@
 #     postgres_user: postgres_user
 #     worker_command: "/bin/bash -c 'dotnet build && dotnet run'"
 #   tasks:
-- name: Update apt cache
-  hosts: backend
-  ansible.builtin.apt:
-    update_cache: yes
 - name: Pull Worker Docker image
   community.docker.docker_image:
     name: "{{ worker_image }}"
