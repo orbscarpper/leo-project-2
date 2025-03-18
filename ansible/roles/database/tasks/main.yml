@@ -7,6 +7,10 @@
 #   roles:
 #     - database
 #   tasks:
+- name: Update apt cache
+  hosts: database
+  ansible.builtin.apt:
+    update_cache: yes
 - name: Create Docker network (if it doesn't exist)
   docker_network:
     name: back-tier

@@ -3,7 +3,10 @@
 #   hosts: frontend_vote
 #   become: yes
 #   tasks:
-
+- name: Update apt cache
+  hosts: frontend_vote
+  ansible.builtin.apt:
+    update_cache: yes
 - name: Pull the Python Docker image
   package:
     name: docker.io

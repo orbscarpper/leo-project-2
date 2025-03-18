@@ -3,6 +3,10 @@
 #   hosts: frontend_result
 #   become: yes
 #   tasks:
+- name: Update apt cache
+  hosts: frontend_result
+  ansible.builtin.apt:
+    update_cache: yes
 - name: Pull the Docker image
   community.docker.docker_image:
     name: mirmika/result
