@@ -1,8 +1,4 @@
-# ---
-# - name: Pull Docker image and delpoy result
-#   hosts: frontend_result
-#   become: yes
-#   tasks:
+---
 - name: Pull the Docker image
   community.docker.docker_image:
     name: mirmika/result

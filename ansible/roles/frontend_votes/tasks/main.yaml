@@ -1,15 +1,8 @@
-# ---
-# - name: Pull Docker image and deploy vote
-#   hosts: frontend_vote
-#   become: yes
-#   tasks:
-
-- name: Pull the Python Docker image
-  package:
-    name: docker.io
-    state: present
-    # name: python:3.9
-    # source: pull
+---
+- name: Pull the Docker image
+  community.docker.docker_image:
+    name: mirmika/result
+    source: pull
 
 - name: Create and start the Docker container
   docker_container:

@@ -1,18 +1,4 @@
-# ---
-# - name: Deploy Worker Service on EC2
-#   hosts: backend-instance
-#   become: true
-#   vars_files:
-#     - roles/database/vars/secrets.yml
-#   vars:
-#     worker_image: mirmika/worker:latest
-#     container_name: worker_service_container
-#     redis_host: redis-instance
-#     postgres_host: database-instance
-#     postgres_db: votes
-#     postgres_user: postgres_user
-#     worker_command: "/bin/bash -c 'dotnet build && dotnet run'"
-#   tasks:
+---
 - name: Pull Worker Docker image
   community.docker.docker_image:
     name: "{{ worker_image }}"
