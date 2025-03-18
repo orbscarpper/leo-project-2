@@ -265,12 +265,20 @@ resource "aws_security_group" "frontend_sg" {
       security_groups = [aws_security_group.bastion_sg.id] # Allow SSH from Bastion
     }
 
+egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+
+ /* 
   egress {
   from_port       = 6379
   to_port         = 6379
   protocol        = "tcp"
   security_groups = [aws_security_group.redis_sg.id]  # Allow connection to Redis
-}
+} */
 
 # not sure about this??
   egress {
@@ -295,14 +303,14 @@ resource "aws_security_group" "worker_sg" {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    security_groups = [aws_security_group.redis_sg.id] 
+    security_groups = [aws_security_group.frontend_sg.id] # check this if here should be redis_sg ?
   }
 
   ingress {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    security_groups = [aws_security_group.postgres_sg.id] 
+    security_groups = [aws_security_group.frontend_sg.id] # check this if here should be postgres_sg ?
   }
 
   ingress {
@@ -327,14 +335,14 @@ resource "aws_security_group" "worker_sg" {
 # Security Group for Redis
 resource "aws_security_group" "redis_sg" {
   name        = "redis-sg"
-  description = "Allow communication from Frontend on Redis port (6379)"
+  description = "Allow communication from Worker on Redis port (6379)"
   vpc_id      = aws_vpc.devops_vpc.id
 
   ingress {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    security_groups = [aws_security_group.frontend_sg.id]
+    security_groups = [aws_security_group.worker_sg.id] # shouldn't it be frontend ?
   }
 
   ingress {
@@ -454,7 +462,7 @@ resource "aws_instance" "database" {
   subnet_id              = aws_subnet.private_subnet.id
   security_groups        = [
       aws_security_group.redis_sg.id, 
-      aws_security_group.postgres_sg.id
+      aws_security_group.frontend_sg.id
     ]
   key_name               = data.aws_key_pair.ssh_key.key_name
 
