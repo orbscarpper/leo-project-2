@@ -1,14 +1,49 @@
 ---
-- name: Update apt packages (Ubuntu)
+- name: Remove APT lock files
+  file:
+    state: absent
+    path: "/var/lib/apt/lists/lock"
+  tags: apt
+
+- name: Install required dependencies
   apt:
-    update_cache: 
-  when: ansible_os_family == "Debian"
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: yes
+
+- name: Check if Docker's official GPG key is already added
+  ansible.builtin.stat:
+    path: /usr/share/keyrings/docker-archive-keyring.gpg
+  register: docker_gpg_key
+
+- name: Add Docker's official GPG key if not present
+  ansible.builtin.shell: |
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  when: not docker_gpg_key.stat.exists
+
+
+- name: Add Docker repository
+  shell: |
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  args:
+    executable: /bin/bash
+
+- name: Update APT cache
+  apt:
+    update_cache: yes
 
 - name: Install Docker
-  package:
-    name: docker.io
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
     state: present
-  when: ansible_os_family == "Debian"
 
 - name: Ensure Docker service is running
   service:
@@ -20,4 +55,4 @@
   user:
     name: ubuntu
     groups: docker
-    append: yes 
+    append: yes
