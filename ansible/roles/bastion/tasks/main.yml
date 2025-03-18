@@ -10,10 +10,11 @@
 
 - name: Ensure SSH key exists
   ansible.builtin.copy:
-    src: ~/.ssh/vpc-connection-key.pem
-    dest: /home/ubuntu/.ssh/vpc-connection-key.pem
-    mode: '0400'
+    src: ~/vpc-connection-key.pem
+    dest: /home/ubuntu/vpc-connection-key.pem
+    mode: '0600'
     owner: ubuntu
+    
     group: ubuntu
 
 - name: Allow SSH Agent Forwarding
