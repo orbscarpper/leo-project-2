@@ -14,7 +14,6 @@
     dest: /home/ubuntu/vpc-connection-key.pem
     mode: '0600'
     owner: ubuntu
-    
     group: ubuntu
 
 - name: Allow SSH Agent Forwarding
