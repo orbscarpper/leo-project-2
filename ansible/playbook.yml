@@ -1,12 +1,25 @@
 ---
 - name: Deploy Voting App
-  hosts: all
+  hosts: all  
   become: true
   roles:
-    - docker
-    - bastion
-    - frontend_votes
-    - frontend_results
-    - backend
-    - redis
-    - database
+    - role: docker
+      hosts: all  
+
+    - role: bastion
+      hosts: bastion  
+
+    - role: frontend_votes
+      hosts: frontend_vote 
+
+    - role: frontend_results
+      hosts: frontend_result  
+
+    - role: backend
+      hosts: backend  
+
+    - role: redis
+      hosts: redis  
+
+    - role: database
+      hosts: database 

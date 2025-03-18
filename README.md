@@ -1,4 +1,3 @@
-# devOps-infrastructure-automation
-Containerize a multi-component Web Application using Docker Compose &amp; manage infrastructure with Terraform and Ansible on AWS.
+# DevOps Infrastructure Automation
+Containerize a multi-component Web Application using Docker Compose, provision and manage infrastructure with Terraform and Ansible on AWS.
 
-<!-- Test by Diogo -->

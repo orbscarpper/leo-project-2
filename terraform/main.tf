@@ -280,14 +280,6 @@ egress {
   security_groups = [aws_security_group.redis_sg.id]  # Allow connection to Redis
 } */
 
-# not sure about this??
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["10.0.0.0/16"]
-  }
-
   tags = {
     Name = "frontend-sg"
   }
@@ -303,15 +295,11 @@ resource "aws_security_group" "worker_sg" {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    security_groups = [aws_security_group.frontend_sg.id] # check this if here should be redis_sg ?
+    #cidr_blocks = ["10.0.0.0/16"]
+    security_groups = [aws_security_group.redis_sg.id] 
   }
 
-  ingress {
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
-    security_groups = [aws_security_group.frontend_sg.id] # check this if here should be postgres_sg ?
-  }
+
 
   ingress {
       from_port   = 22
@@ -326,6 +314,13 @@ resource "aws_security_group" "worker_sg" {
     protocol    = "-1"
     cidr_blocks = ["10.0.0.0/16"]
   }
+/*
+   egress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    security_groups = [aws_security_group.postgres_sg.id] 
+  } */
 
   tags = {
     Name = "worker-sg"
@@ -342,7 +337,7 @@ resource "aws_security_group" "redis_sg" {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    security_groups = [aws_security_group.worker_sg.id] # shouldn't it be frontend ?
+    security_groups = [aws_security_group.frontend_sg.id] # shouldn't it be frontend ?
   }
 
   ingress {
@@ -356,7 +351,7 @@ resource "aws_security_group" "redis_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["10.0.0.0/16"]  # Restrict traffic to VPC only, within the private subnet
+    cidr_blocks = ["10.0.0.0/16"]  # Restrict traffic to VPC only, within the private subnet, (toDo: change to only worker)
   }
 
   tags = {
@@ -388,7 +383,7 @@ resource "aws_security_group" "postgres_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-     cidr_blocks = ["10.0.0.0/16"] # should only allow traffic within the private subnet
+     cidr_blocks = ["10.0.0.0/16"] # should only allow traffic within the private subnet, (toDO: change to privtae IP of the resul instance)
   }
 
   tags = {
@@ -428,10 +423,7 @@ resource "aws_instance" "redis" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.private_subnet.id
-  security_groups        = [
-      aws_security_group.worker_sg.id,  # Allow communication from Worker
-      aws_security_group.frontend_sg.id # Allow communication from Frontend
-    ]
+  security_groups        = [aws_security_group.redis_sg.id]
   key_name               = data.aws_key_pair.ssh_key.key_name
 
   tags = {
@@ -445,8 +437,7 @@ resource "aws_instance" "worker" {
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.private_subnet.id
   security_groups        = [
-      aws_security_group.redis_sg.id, 
-      aws_security_group.postgres_sg.id
+      aws_security_group.worker_sg.id 
     ]
   key_name               = data.aws_key_pair.ssh_key.key_name
 
@@ -461,8 +452,7 @@ resource "aws_instance" "database" {
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.private_subnet.id
   security_groups        = [
-      aws_security_group.redis_sg.id, 
-      aws_security_group.frontend_sg.id
+      aws_security_group.postgres_sg.id
     ]
   key_name               = data.aws_key_pair.ssh_key.key_name
 
