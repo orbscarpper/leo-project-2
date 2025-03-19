@@ -1,49 +1,13 @@
----
-#- name: Load database secrets
-  #include_vars:
-  #  file: "../../database/vars/secrets.yml"
-- name: Pull Worker Docker image
-  community.docker.docker_image:
-    name: "{{ worker_image }}"
-    source: pull
-- name: Ensure the /home/ubuntu/vote directory exists
-  file:
-   path: /home/ubuntu/worker
-   state: directory
-   owner: ubuntu
-   group: ubuntu
-   mode: '0755'
-
-- name: Create and start Worker container
-  docker_container:
-    name: "{{ container_name }}"
-    image: "{{ worker_image }}"
+- name: Start Worker (backend-instance)
+  community.docker.docker_container:
+    name: worker
+    image: mirmika/worker:latest
     state: started
     restart_policy: always
-    volumes:
-      - "/home/ubuntu/worker"
-    command: "{{ worker_command }}"
     env:
-      REDIS_HOST: "{{ redis_host }}"
-      POSTGRES_HOST: "{{ postgres_host }}"
-      POSTGRES_DB: "{{ postgres_db }}"
-      POSTGRES_USER: "{{ postgres_user }}"
-      POSTGRES_PASSWORD: "postgres"
+      REDIS_HOST: "10.0.42.133"
+      DB_HOST: "10.0.42.209"
 
-- name: Wait for Redis
-  ansible.builtin.wait_for:
-    host: "{{ redis_host }}"
-    port: 6379
-    delay: 10
-    timeout: 60
-
-- name: Wait for Worker service
-  ansible.builtin.wait_for:
-    host: "{{ worker_host }}"
-    port: 80
-    delay: 10
-    timeout: 60
-
-- name: Success message
-  debug:
-    msg: "Worker service is running and processing votes."
+    depends_on:
+      - redis  # Ensure Redis starts before the worker
+      - db  # Ensure Database starts before the worker

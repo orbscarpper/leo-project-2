@@ -1,42 +1,22 @@
----
-- name: Pull the Docker image
-  community.docker.docker_image:
-    name: mirmika/vote
-    source: pull
-- name: Ensure the /home/ubuntu/vote directory exists
-  file:
-   path: /home/ubuntu/vote
-   state: directory
-   owner: ubuntu
-   group: ubuntu
-   mode: '0755'
-- name: Create and start the Docker container
-  docker_container:
-    name: vote_app_container
-    image: mirmika/vote
+- name: Kill process using port 5000 (if it exists)
+  ansible.builtin.shell: |
+    pid=$(lsof -ti:5000)
+    if [ -n "$pid" ]; then
+      kill -9 $pid
+    fi
+  ignore_errors: true
+
+- name: Start Vote App Container
+  community.docker.docker_container:
+    name: vote_app
+    image: mirmika/vote:latest  # Replace with your actual image
     state: started
-    restart_policy: always  # This ensures the container restarts on failure
+    restart_policy: always
     ports:
       - "5000:5000"
-    volumes:
-      - /home/ubuntu/vote:/app  # Corrected volume path (adjust the path as needed)
-    command: >
-      /bin/bash -c "
-      ls -l /app &&  # Debug the volume content
-      cd /app && 
-      pip install -r requirements.txt && 
-      python app.py"
     env:
-      FLASK_APP: app.py  # Optional: Set environment variables for the app
-      FLASK_ENV: production
+      FLASK_APP: app.py  
+      FLASK_ENV: production  
+      REDIS_HOST: "10.0.42.133"  # Ensure the vote app connects to Redis
+      DB_HOST: "10.0.42.209"
 
-- name: Wait for the application to start
-  ansible.builtin.wait_for:
-    host: "{{ ansible_host }}"
-    port: 5000
-    delay: 10
-    timeout: 60
-
-- name: Display success message
-  debug:
-    msg: "The Vote App is now running on http://localhost:5000"
