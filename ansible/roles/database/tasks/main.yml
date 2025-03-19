@@ -17,8 +17,6 @@
       POSTGRES_PASSWORD: "postgres"
     volumes:
       - "db-data:/var/lib/postgresql/data"
-    networks:
-      - name: back-tier
     ports:
       - "5432:5432"
 
