@@ -207,6 +207,38 @@ egress {
   }
 }
 
+# Security Group for Redis
+resource "aws_security_group" "redis_sg" {
+  name        = "redis-sg"
+  description = "Allow communication from Vote App on Redis port (6379)"
+  vpc_id      = aws_vpc.devops_vpc.id
+
+  ingress {
+    from_port   = 6379
+    to_port     = 6379
+    protocol    = "tcp"
+    # security_groups = [aws_security_group.frontend_sg.id] # allow communication from frontend (vote app) on port 6379
+    cidr_blocks = ["10.0.0.0/16"] # keep it open to the VPC for testing
+  }
+
+  ingress {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      security_groups = [aws_security_group.bastion_sg.id] # Allow SSH from Bastion
+    }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]  # toDO: Restrict traffic to VPC only ["10.0.0.0/16"], or within the private subnet to only worker service)
+  }
+
+  tags = {
+    Name = "redis-sg"
+  }
+}
 # Security Group for Worker (Backend service)
 resource "aws_security_group" "worker_sg" {
   name        = "worker-sg"
@@ -217,7 +249,8 @@ resource "aws_security_group" "worker_sg" {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    security_groups = [aws_security_group.redis_sg.id] 
+   # security_groups = [aws_security_group.redis_sg.id]
+    cidr_blocks = ["10.0.0.0/16"] # keep it open to the VPC for testing 
   }
 
   ingress {
@@ -246,38 +279,6 @@ resource "aws_security_group" "worker_sg" {
   }
 }
 
-# Security Group for Redis
-resource "aws_security_group" "redis_sg" {
-  name        = "redis-sg"
-  description = "Allow communication from Vote App on Redis port (6379)"
-  vpc_id      = aws_vpc.devops_vpc.id
-
-  ingress {
-    from_port   = 6379
-    to_port     = 6379
-    protocol    = "tcp"
-    security_groups = [aws_security_group.frontend_sg.id] # allow communication from frontend (vote app) on port 6379
-  }
-
-  ingress {
-      from_port   = 22
-      to_port     = 22
-      protocol    = "tcp"
-      security_groups = [aws_security_group.bastion_sg.id] # Allow SSH from Bastion
-    }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]  # toDO: Restrict traffic to VPC only ["10.0.0.0/16"], or within the private subnet to only worker service)
-  }
-
-  tags = {
-    Name = "redis-sg"
-  }
-}
-
 # Security Group for Postgres
 resource "aws_security_group" "postgres_sg" {
   name        = "postgres-sg"
@@ -288,7 +289,8 @@ resource "aws_security_group" "postgres_sg" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    security_groups = [aws_security_group.worker_sg.id]
+    # security_groups = [aws_security_group.worker_sg.id]
+    cidr_blocks = ["10.0.0.0/16"] # keep it open to the VPC for testing
   }
 
   ingress {
