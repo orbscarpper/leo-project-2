@@ -3,10 +3,14 @@
   docker_network:
     name: back-tier
     state: present
-
+- name: Ensure the /home/ubuntu/vote directory exists
+  file:
+   path: /home/ubuntu/db-data
+   state: directory
+   owner: ubuntu
+   group: ubuntu
+   mode: '0755'
 - name: Start PostgreSQL Container
-  #vars_files:
-   # - roles/database/vars/secrets.yml
   docker_container:
     name: db
     image: postgres:15-alpine
@@ -14,7 +18,7 @@
     restart_policy: always
     env:
       POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "{{ db_password }}"
+      POSTGRES_PASSWORD: "postgres"
     volumes:
       - "db-data:/var/lib/postgresql/data"
     networks:

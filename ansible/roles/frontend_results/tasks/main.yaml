@@ -3,9 +3,15 @@
   community.docker.docker_image:
     name: mirmika/result
     source: pull
-
+- name: Ensure the /home/ubuntu/vote directory exists
+  file:
+   path: /home/ubuntu/result
+   state: directory
+   owner: ubuntu
+   group: ubuntu
+   mode: '0755'
 - name: Create and start the Docker container
-  community.docker.docker_container:
+  docker_container:
     name: result_app_container
     image: mirmika/result
     state: started
@@ -15,7 +21,7 @@
     volumes:
       - /ubuntu/home/result:/app
     command: "/bin/bash -c 'cd /app && npm ci && node server.js'"
-    environment:
+    env:
       NODE_ENV: production
 
 - name: Wait for the application to start

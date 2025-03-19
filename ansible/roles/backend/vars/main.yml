@@ -5,5 +5,5 @@ container_name: worker_service_container
 redis_host: redis-instance
 postgres_host: database-instance
 postgres_db: votes
-postgres_user: postgres_user
+postgres_user: postgres
 worker_command: "/bin/bash -c 'dotnet build && dotnet run'"

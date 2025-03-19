@@ -1,9 +1,15 @@
 ---
 - name: Pull the Docker image
   community.docker.docker_image:
-    name: mirmika/result
+    name: python:3.9
     source: pull
-
+- name: Ensure the /home/ubuntu/vote directory exists
+  file:
+   path: /home/ubuntu/vote
+   state: directory
+   owner: ubuntu
+   group: ubuntu
+   mode: '0755'
 - name: Create and start the Docker container
   docker_container:
     name: vote_app_container
@@ -13,13 +19,14 @@
     ports:
       - "5000:5000"
     volumes:
-      - /ubuntu/home/vote:/app
+      - /home/ubuntu/vote:/app  # Corrected volume path (adjust the path as needed)
     command: >
       /bin/bash -c "
-      cd /app &&
-      pip install -r requirements.txt &&
+      ls -l /app &&  # Debug the volume content
+      cd /app && 
+      pip install -r requirements.txt && 
       python app.py"
-    environment:
+    env:
       FLASK_APP: app.py  # Optional: Set environment variables for the app
       FLASK_ENV: production
 
@@ -29,7 +36,6 @@
     port: 5000
     delay: 10
     timeout: 60
-  when: server_process.rc == 0
 
 - name: Display success message
   debug:
