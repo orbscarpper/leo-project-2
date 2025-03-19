@@ -21,7 +21,7 @@
     state: started
     restart_policy: always
     volumes:
-      - "/home/ubuntu/worker:/app"
+      - "/home/ubuntu/worker"
     command: "{{ worker_command }}"
     env:
       REDIS_HOST: "{{ redis_host }}"

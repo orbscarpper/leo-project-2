@@ -1,7 +1,7 @@
 ---
 - name: Pull the Docker image
   community.docker.docker_image:
-    name: python:3.9
+    name: mirmika/vote
     source: pull
 - name: Ensure the /home/ubuntu/vote directory exists
   file:
@@ -13,7 +13,7 @@
 - name: Create and start the Docker container
   docker_container:
     name: vote_app_container
-    image: python:3.9
+    image: mirmika/vote
     state: started
     restart_policy: always  # This ensures the container restarts on failure
     ports:
