@@ -134,85 +134,7 @@ resource "aws_route_table_association" "private_rt_assoc" {
   subnet_id      = aws_subnet.private_subnet.id
   route_table_id = aws_route_table.private_rt.id
 } 
-
-/****************** Use module block to instantiate 3 private subnets ***************************/
-/*
-module "private_subnet_1" {
-  source            = "./modules/private-subnet"
-  vpc_id            = aws_vpc.devops_vpc.id # Use ID of vpc as the value for the vpc_id variable inside the private-subnet module. 
-  cidr_block        = "10.0.42.0/24"
-  availability_zone = "us-west-2b"
-  subnet_name       = "private-subnet-1"
-}
-
-module "private_subnet_2" {
-  source            = "./modules/private-subnet"
-  vpc_id            = aws_vpc.devops_vpc.id 
-  cidr_block        = "10.0.43.0/24"
-  availability_zone = "us-west-2c" 
-  subnet_name       = "private-subnet-2"
-}
-
-module "private_subnet_3" {
-  source            = "./modules/private-subnet"
-  vpc_id            = aws_vpc.devops_vpc.id
-  cidr_block        = "10.0.44.0/24"
-  availability_zone = "us-west-2d" 
-  subnet_name       = "private-subnet-3"
-}
-
-# NAT Gateway requires an Elastic IP (EIP) to allow outbound internet access
-resource "aws_eip" "nat_gw_ip" {
-  domain = "vpc"
-
-  tags = {
-    Name = "NAT-Gateway-EIP"
-  }
-}
-
-# Create a NAT Gateway
-resource "aws_nat_gateway" "nat_gw" {
-  allocation_id = aws_eip.nat_gw_ip.id
-  subnet_id     = aws_subnet.public_subnet.id  # the NAT Gateway will be placed in the public subnet to allow private subnet instances to access the internet
-
-  tags = {
-    Name = "NAT-Gateway"
-  }
-}
-
-#Create a Route Table for the Private Subnet
-resource "aws_route_table" "private_rt" {
-  vpc_id = aws_vpc.devops_vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat_gw.id
-  }
-
-  tags = {
-    Name = "PrivateRouteTable"
-  }
-}
-
-# Associate the PrivateRouteTable with the Private Subnet 3.
-resource "aws_route_table_association" "private_rt_assoc" {
-  subnet_id      = module.private_subnet_3.subnet_id
-  route_table_id = aws_route_table.private_rt.id
-}
-
-output "private_subnet_1_id" {
-  value = module.private_subnet_1.subnet_id
-}
-
-output "private_subnet_2_id" {
-  value = module.private_subnet_2.subnet_id
-}
-
-output "private_subnet_3_id" {
-  value = module.private_subnet_3.subnet_id
-}
-
-*/
+/************************** Configure Application Load Balancer *****************************************/
 # Security Group for ALB (public access for frontend services)
 resource "aws_security_group" "alb_sg" {
   name        = "alb-sg"
@@ -269,7 +191,7 @@ egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"] # open outbound permissions
   }
 
  /* 
@@ -295,11 +217,8 @@ resource "aws_security_group" "worker_sg" {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    #cidr_blocks = ["10.0.0.0/16"]
     security_groups = [aws_security_group.redis_sg.id] 
   }
-
-
 
   ingress {
       from_port   = 22
@@ -312,7 +231,7 @@ resource "aws_security_group" "worker_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"] # open outbound permissions for now
   }
 /*
    egress {
@@ -330,14 +249,14 @@ resource "aws_security_group" "worker_sg" {
 # Security Group for Redis
 resource "aws_security_group" "redis_sg" {
   name        = "redis-sg"
-  description = "Allow communication from Worker on Redis port (6379)"
+  description = "Allow communication from Vote App on Redis port (6379)"
   vpc_id      = aws_vpc.devops_vpc.id
 
   ingress {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    security_groups = [aws_security_group.frontend_sg.id] # shouldn't it be frontend ?
+    security_groups = [aws_security_group.frontend_sg.id] # allow communication from frontend (vote app) on port 6379
   }
 
   ingress {
@@ -351,7 +270,7 @@ resource "aws_security_group" "redis_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["10.0.0.0/16"]  # Restrict traffic to VPC only, within the private subnet, (toDo: change to only worker)
+    cidr_blocks = ["0.0.0.0/0"]  # toDO: Restrict traffic to VPC only ["10.0.0.0/16"], or within the private subnet to only worker service)
   }
 
   tags = {
@@ -383,7 +302,7 @@ resource "aws_security_group" "postgres_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-     cidr_blocks = ["10.0.0.0/16"] # should only allow traffic within the private subnet, (toDO: change to privtae IP of the resul instance)
+     cidr_blocks = ["0.0.0.0/0"] # should only allow traffic within the private subnet, (toDO: change to privtae IP of the result instance)
   }
 
   tags = {
@@ -540,29 +459,29 @@ resource "aws_security_group" "bastion_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    #cidr_blocks = var.allowed_ssh_ips
-    cidr_blocks = ["0.0.0.0/0"] # allow form all I.Ps
+    cidr_blocks = var.allowed_ssh_ips
+    # cidr_blocks = ["0.0.0.0/0"] # allow form all I.Ps
   }
 
-  # Ingress: Allow SSH access only from specific security groups (for Bastion -> private instances)
-  /*
-  ingress {
+   # Egress: Allow Bastion to reach internet for downloading packages
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Ingress: Allow SSH access to specific security groups (from Bastion -> private instances)
+  egress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     security_groups = [
       aws_security_group.frontend_sg.id,
+      aws_security_group.redis_sg.id,
       aws_security_group.worker_sg.id,
-      aws_security_group.postgres_sg.id,
-      aws_security_group.redis_sg.id
+      aws_security_group.postgres_sg.id     
     ]
-  } */
-   # Egress: Allow Bastion to reach private subnets and other necessary resources
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["10.0.0.0/16"]  # Private subnet IP range
   }
 
   tags = {
