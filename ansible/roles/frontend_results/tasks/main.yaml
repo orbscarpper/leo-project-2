@@ -19,7 +19,7 @@
     ports:
       - "80:80"
     volumes:
-      - /ubuntu/home/result:/app
+      - /home/ubuntu/result:/app
     command: "/bin/bash -c 'cd /app && npm ci && node server.js'"
     env:
       NODE_ENV: production

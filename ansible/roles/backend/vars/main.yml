@@ -6,4 +6,5 @@ redis_host: redis-instance
 postgres_host: database-instance
 postgres_db: votes
 postgres_user: postgres
+worker_host: backend-instance
 worker_command: "/bin/bash -c 'dotnet build && dotnet run'"
