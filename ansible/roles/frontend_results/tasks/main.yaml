@@ -1,15 +1,16 @@
 ---
+- name: Kill process using port 80 (if it exists)
+  ansible.builtin.shell: |
+    pid=$(lsof -ti:80)
+    if [ -n "$pid" ]; then
+      kill -9 $pid
+    fi
+
 - name: Pull the Docker image
   community.docker.docker_image:
     name: mirmika/result
     source: pull
-- name: Ensure the /home/ubuntu/vote directory exists
-  file:
-   path: /home/ubuntu/result
-   state: directory
-   owner: ubuntu
-   group: ubuntu
-   mode: '0755'
+
 - name: Create and start the Docker container
   docker_container:
     name: result_app_container
@@ -18,20 +19,17 @@
     restart_policy: always
     ports:
       - "80:80"
-    volumes:
-      - /home/ubuntu/result:/app
-    command: "/bin/bash -c 'cd /app && npm ci && node server.js'"
     env:
       NODE_ENV: production
 
 - name: Wait for the application to start
   ansible.builtin.wait_for:
-    host: "{{ ansible_host }}"
+    host: "10.0.42.254"
     port: 80
     delay: 10
     timeout: 60
-  when: server_process.rc == 0
 
 - name: Display success message
   debug:
     msg: "The Result App is now running on http://localhost:80"
+
