@@ -1,33 +1,29 @@
-# #---
-# - name: Pull Docker image, create Redis container, and configure networking
-#   hosts: redis
-#   become: yes
-#   tasks:
+---
 - name: Create Docker network (if it doesn't exist)
   docker_network:
     name: back-tier
     state: present
-- name: Ensure the /home/ubuntu/vote directory exists
+
+- name: Ensure the /home/ubuntu/redis-data directory exists
   file:
-   path: /home/ubuntu/redis-data
-   state: directory
-   owner: ubuntu
-   group: ubuntu
-   mode: '0755'
+    path: /home/ubuntu/redis-data
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+
 - name: Start Redis Container
-  docker_container:
+  community.docker.docker_container:
     name: redis
     image: redis:7-alpine
     state: started
     restart_policy: always
-    env:
-      REDIS_PASSWORD: "${REDIS_PASSWORD}"
-      volumes:
-        - "redis-data:/data"
-      networks:
-        - name: back-tier
-      ports:
-        - "6379:6379"  # Expose Redis port to the host machine
+    networks:
+      - name: back-tier  # Attach the container to the "back-tier" network
+    ports:
+      - "6379:6379"  # Expose Redis port to the host machine
+    volumes:
+      - /home/ubuntu/redis-data:/data  # Mount the host directory to the container
 
 - name: Ensure redis-data volume exists
   docker_volume:
