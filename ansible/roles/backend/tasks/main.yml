@@ -4,14 +4,14 @@
     host: "10.0.42.133"
     port: 6379
     delay: 20
-    timeout: 60
+    timeout: 90
 # Wait for Database to be ready
 - name: Wait for Database to be ready
   ansible.builtin.wait_for:
     host: "10.0.42.209" 
     port: 5432
     delay: 20
-    timeout: 60
+    timeout: 90
 
 - name: Start Worker (backend-instance)
   community.docker.docker_container:
@@ -22,7 +22,9 @@
     env:
       REDIS_HOST: "10.0.42.133"
       DB_HOST: "10.0.42.209"
-
+      DB_USERNAME: "postgres"
+      DB_PASSWORD: "postgres"
+      DB_NAME: "votes"
 - name: Success message
   debug:
     msg: "Worker service is running and processing votes."

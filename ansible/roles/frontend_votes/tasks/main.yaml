@@ -15,8 +15,6 @@
     ports:
       - "5001:5000"
     env:
-      FLASK_APP: app.py  
-      FLASK_ENV: production  
+      REDIS_PORT: "6379"
       REDIS_HOST: "10.0.42.133"  # Ensure the vote app connects to Redis
-      DB_HOST: "10.0.42.209"
 

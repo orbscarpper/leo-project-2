@@ -12,9 +12,6 @@
     image: postgres:15-alpine
     state: started
     restart_policy: always
-    env:
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
     volumes:
       - "db-data:/var/lib/postgresql/data"
     ports:
