@@ -1,10 +1,9 @@
-- name: Start Redis Container (No Volume)
+---
+- name: Start Redis Container
   community.docker.docker_container:
     name: redis
     image: redis:7-alpine
     state: started
     restart_policy: always
-    networks:
-      - name: back-tier
     ports:
       - "6379:6379"

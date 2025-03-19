@@ -1,8 +1,4 @@
 ---
-- name: Create Docker network (if it doesn't exist)
-  docker_network:
-    name: back-tier
-    state: present
 - name: Ensure the /home/ubuntu/vote directory exists
   file:
    path: /home/ubuntu/db-data

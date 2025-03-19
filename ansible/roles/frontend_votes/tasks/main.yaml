@@ -1,6 +1,6 @@
-- name: Kill process using port 5000 (if it exists)
+- name: Kill process using port 5001 (if it exists)
   ansible.builtin.shell: |
-    pid=$(lsof -ti:5000)
+    pid=$(lsof -ti:5001)
     if [ -n "$pid" ]; then
       kill -9 $pid
     fi
@@ -13,7 +13,7 @@
     state: started
     restart_policy: always
     ports:
-      - "5000:5000"
+      - "5001:5000"
     env:
       FLASK_APP: app.py  
       FLASK_ENV: production  

@@ -1,3 +1,18 @@
+# Wait for Redis to be ready
+- name: Wait for Redis to be ready
+  ansible.builtin.wait_for:
+    host: "10.0.42.133"
+    port: 6379
+    delay: 20
+    timeout: 60
+# Wait for Database to be ready
+- name: Wait for Database to be ready
+  ansible.builtin.wait_for:
+    host: "10.0.42.209" 
+    port: 5432
+    delay: 20
+    timeout: 60
+
 - name: Start Worker (backend-instance)
   community.docker.docker_container:
     name: worker
@@ -8,6 +23,6 @@
       REDIS_HOST: "10.0.42.133"
       DB_HOST: "10.0.42.209"
 
-    depends_on:
-      - redis  # Ensure Redis starts before the worker
-      - db  # Ensure Database starts before the worker
+- name: Success message
+  debug:
+    msg: "Worker service is running and processing votes."

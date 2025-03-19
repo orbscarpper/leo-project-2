@@ -1,7 +1,7 @@
 ---
-- name: Kill process using port 80 (if it exists)
+- name: Kill process using port 81 (if it exists)
   ansible.builtin.shell: |
-    pid=$(lsof -ti:80)
+    pid=$(lsof -ti:81)
     if [ -n "$pid" ]; then
       kill -9 $pid
     fi
@@ -18,14 +18,14 @@
     state: started
     restart_policy: always
     ports:
-      - "80:80"
+      - "81:80"
     env:
       NODE_ENV: production
 
 - name: Wait for the application to start
   ansible.builtin.wait_for:
     host: "10.0.42.254"
-    port: 80
+    port: 81
     delay: 10
     timeout: 60
 
