@@ -21,7 +21,7 @@
     state: started
     restart_policy: always
     volumes:
-      - "/ubuntu/home/worker:/app"
+      - "/home/ubuntu/worker:/app"
     command: "{{ worker_command }}"
     env:
       REDIS_HOST: "{{ redis_host }}"
@@ -39,7 +39,7 @@
 
 - name: Wait for Worker service
   ansible.builtin.wait_for:
-    host: "{{ ansible_host }}"
+    host: "{{ worker_host }}"
     port: 80
     delay: 10
     timeout: 60
