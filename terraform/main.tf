@@ -159,7 +159,7 @@ resource "aws_security_group" "alb_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
@@ -397,26 +397,10 @@ resource "aws_lb" "frontend_alb" {
   }
 }
 
-# Add a listener for the ALB (for HTTP traffic on port 80)
-resource "aws_lb_listener" "frontend_alb_listener" {
-  load_balancer_arn = aws_lb.frontend_alb.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "fixed-response"
-    fixed_response {
-      status_code = 200
-      content_type = "text/plain"
-      message_body = "ALB is working!"
-    }
-  }
-}
-
-# Add a target group for the frontend EC2 instances
-resource "aws_lb_target_group" "frontend_target_group" {
-  name     = "frontend-tg"
-  port     = 80
+# Add a target group for the Vote APP instance
+resource "aws_lb_target_group" "vote_target_group" {
+  name     = "vote-tg"
+  port     = 5000 # Vote App port
   protocol = "HTTP"
   vpc_id   = aws_vpc.devops_vpc.id
 
@@ -430,21 +414,90 @@ resource "aws_lb_target_group" "frontend_target_group" {
   }
 
   tags = {
-    Name = "Frontend-Target-Group"
+    Name = "Vote-Target-Group"
   }
 }
 
-# Register frontend EC2 instances with the target group
+# Add a target group for the Result APP instance
+resource "aws_lb_target_group" "result_target_group" {
+  name     = "result-tg"
+  port     = 80 # Result App port
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.devops_vpc.id
+
+  health_check {
+    protocol = "HTTP"
+    path     = "/"
+    interval = 30
+    timeout  = 5
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+  }
+
+  tags = {
+    Name = "Result-Target-Group"
+  }
+}
+
+# Register vote and result EC2 instances with the target group
 resource "aws_lb_target_group_attachment" "frontend_attachment_votes" {
-  target_group_arn = aws_lb_target_group.frontend_target_group.arn
+  target_group_arn = aws_lb_target_group.vote_target_group.arn
   target_id        = aws_instance.votes.id
-  port             = 80
+  port             = 5000
 }
 
 resource "aws_lb_target_group_attachment" "frontend_attachment_results" {
-  target_group_arn = aws_lb_target_group.frontend_target_group.arn
+  target_group_arn = aws_lb_target_group.result_target_group.arn
   target_id        = aws_instance.results.id
   port             = 80
+}
+
+# Add a listener for the ALB (for HTTP traffic on port 80)
+resource "aws_lb_listener" "http_listener" {
+  load_balancer_arn = aws_lb.frontend_alb.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "fixed-response"
+    fixed_response {
+      status_code = 404
+      content_type = "text/plain"
+      message_body = "404: Not Found"
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "vote_listener_rule" {
+  listener_arn = aws_lb_listener.http_listener.arn
+  priority     = 10
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.vote_target_group.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/vote/*"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "result_listener_rule" {
+  listener_arn = aws_lb_listener.http_listener.arn
+  priority     = 20
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.result_target_group.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/result/*"]
+    }
+  }
 }
 
 /**************************** Configure a Bastion host *****************************************/
@@ -469,19 +522,6 @@ resource "aws_security_group" "bastion_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Ingress: Allow SSH access to specific security groups (from Bastion -> private instances)
-  egress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    security_groups = [
-      aws_security_group.frontend_sg.id,
-      aws_security_group.redis_sg.id,
-      aws_security_group.worker_sg.id,
-      aws_security_group.postgres_sg.id     
-    ]
   }
 
   tags = {
