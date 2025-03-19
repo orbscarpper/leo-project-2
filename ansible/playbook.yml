@@ -5,6 +5,12 @@
   roles:
     - role: docker
 
+    - role: redis
+      when: "'redis' in group_names"
+
+    - role: database
+      when: "'database' in group_names"
+      
     - role: bastion
       when: "'bastion' in group_names"
 
@@ -17,8 +23,3 @@
     - role: backend
       when: "'backend' in group_names"
 
-    - role: redis
-      when: "'redis' in group_names"
-
-    - role: database
-      when: "'database' in group_names"
