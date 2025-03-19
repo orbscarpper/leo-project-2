@@ -6,9 +6,16 @@
   community.docker.docker_image:
     name: "{{ worker_image }}"
     source: pull
+- name: Ensure the /home/ubuntu/vote directory exists
+  file:
+   path: /home/ubuntu/worker
+   state: directory
+   owner: ubuntu
+   group: ubuntu
+   mode: '0755'
 
 - name: Create and start Worker container
-  community.docker.docker_container:
+  docker_container:
     name: "{{ container_name }}"
     image: "{{ worker_image }}"
     state: started
@@ -16,7 +23,7 @@
     volumes:
       - "/ubuntu/home/worker:/app"
     command: "{{ worker_command }}"
-    environment:
+    env:
       REDIS_HOST: "{{ redis_host }}"
       POSTGRES_HOST: "{{ postgres_host }}"
       POSTGRES_DB: "{{ postgres_db }}"

@@ -7,7 +7,13 @@
   docker_network:
     name: back-tier
     state: present
-
+- name: Ensure the /home/ubuntu/vote directory exists
+  file:
+   path: /home/ubuntu/redis-data
+   state: directory
+   owner: ubuntu
+   group: ubuntu
+   mode: '0755'
 - name: Start Redis Container
   docker_container:
     name: redis
