@@ -5,8 +5,6 @@
     state: present
 
 - name: Start PostgreSQL Container
-  #vars_files:
-   # - roles/database/vars/secrets.yml
   docker_container:
     name: db
     image: postgres:15-alpine
@@ -14,7 +12,7 @@
     restart_policy: always
     env:
       POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "{{ db_password }}"
+      POSTGRES_PASSWORD: "postgres"
     volumes:
       - "db-data:/var/lib/postgresql/data"
     networks:

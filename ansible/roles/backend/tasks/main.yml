@@ -1,4 +1,7 @@
 ---
+#- name: Load database secrets
+  #include_vars:
+  #  file: "../../database/vars/secrets.yml"
 - name: Pull Worker Docker image
   community.docker.docker_image:
     name: "{{ worker_image }}"
@@ -18,7 +21,7 @@
       POSTGRES_HOST: "{{ postgres_host }}"
       POSTGRES_DB: "{{ postgres_db }}"
       POSTGRES_USER: "{{ postgres_user }}"
-      POSTGRES_PASSWORD: "{{ db_password }}"
+      POSTGRES_PASSWORD: "postgres"
 
 - name: Wait for Redis
   ansible.builtin.wait_for:
