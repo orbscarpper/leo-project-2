@@ -148,6 +148,13 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+ingress {
+    from_port   = 81
+    to_port     = 81
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   ingress {
     from_port   = 443
     to_port     = 443
@@ -176,6 +183,13 @@ resource "aws_security_group" "frontend_sg" {
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]  # Only ALB can access
+  }
+
+    ingress {
+    from_port   = 81
+    to_port     = 81
     protocol    = "tcp"
     security_groups = [aws_security_group.alb_sg.id]  # Only ALB can access
   }
@@ -217,7 +231,6 @@ resource "aws_security_group" "redis_sg" {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    # security_groups = [aws_security_group.frontend_sg.id] # allow communication from frontend (vote app) on port 6379
     cidr_blocks = ["10.0.0.0/16"] # keep it open to the VPC for testing
   }
 
@@ -246,10 +259,9 @@ resource "aws_security_group" "worker_sg" {
   vpc_id      = aws_vpc.devops_vpc.id
 
   ingress {
-    from_port   = 6379
-    to_port     = 6379
+    from_port   = 0
+    to_port     = 0
     protocol    = "tcp"
-   # security_groups = [aws_security_group.redis_sg.id]
     cidr_blocks = ["10.0.0.0/16"] # keep it open to the VPC for testing 
   }
 
@@ -289,8 +301,16 @@ resource "aws_security_group" "postgres_sg" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    # security_groups = [aws_security_group.worker_sg.id]
-    cidr_blocks = ["10.0.0.0/16"] # keep it open to the VPC for testing
+    security_groups = [aws_security_group.worker_sg.id]
+   
+  }
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    security_groups = [aws_security_group.frontend_sg.id]
+   
   }
 
   ingress {
@@ -423,7 +443,7 @@ resource "aws_lb_target_group" "vote_target_group" {
 # Add a target group for the Result APP instance
 resource "aws_lb_target_group" "result_target_group" {
   name     = "result-tg"
-  port     = 80 # Result App port
+  port     = 81 # Result App port
   protocol = "HTTP"
   vpc_id   = aws_vpc.devops_vpc.id
 
@@ -451,7 +471,7 @@ resource "aws_lb_target_group_attachment" "frontend_attachment_votes" {
 resource "aws_lb_target_group_attachment" "frontend_attachment_results" {
   target_group_arn = aws_lb_target_group.result_target_group.arn
   target_id        = aws_instance.results.id
-  port             = 80
+  port             = 81
 }
 
 # Add a listener for the ALB (for HTTP traffic on port 80)
@@ -514,8 +534,8 @@ resource "aws_security_group" "bastion_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = var.allowed_ssh_ips
-    # cidr_blocks = ["0.0.0.0/0"] # allow form all I.Ps
+    #cidr_blocks = var.allowed_ssh_ips
+    cidr_blocks = ["0.0.0.0/0"] # allow form all I.Ps
   }
 
    # Egress: Allow Bastion to reach internet for downloading packages
