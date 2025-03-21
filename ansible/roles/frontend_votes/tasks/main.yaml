@@ -13,7 +13,7 @@
     state: started
     restart_policy: always
     ports:
-      - "5001:5000"
+      - "80:80"
     env:
       REDIS_PORT: "6379"
       REDIS_HOST: "10.0.42.133"  # Ensure the vote app connects to Redis
