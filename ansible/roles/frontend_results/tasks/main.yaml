@@ -8,13 +8,13 @@
 
 - name: Pull the Docker image
   community.docker.docker_image:
-    name: mirmika/result
+    name: sjagtap0/result:latest
     source: pull
 
 - name: Create and start the Docker container
   docker_container:
     name: result_app_container
-    image: mirmika/result
+    image: sjagtap0/result:latest
     state: started
     restart_policy: always
     ports:
@@ -36,5 +36,5 @@
 
 - name: Display success message
   debug:
-    msg: "The Result App is now running on http://localhost:80"
+    msg: "The Result App is now running on http://localhost:81"
 
