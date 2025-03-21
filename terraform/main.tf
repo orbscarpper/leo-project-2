@@ -402,7 +402,7 @@ resource "aws_lb" "frontend_alb" {
 # Add a target group for the Vote APP instance
 resource "aws_lb_target_group" "vote_target_group" {
   name     = "vote-tg"
-  port     = 5000 # Vote App port
+  port     = 80 # Vote App port
   protocol = "HTTP"
   vpc_id   = aws_vpc.devops_vpc.id
 
@@ -445,7 +445,7 @@ resource "aws_lb_target_group" "result_target_group" {
 resource "aws_lb_target_group_attachment" "frontend_attachment_votes" {
   target_group_arn = aws_lb_target_group.vote_target_group.arn
   target_id        = aws_instance.votes.id
-  port             = 5000
+  port             = 80
 }
 
 resource "aws_lb_target_group_attachment" "frontend_attachment_results" {
