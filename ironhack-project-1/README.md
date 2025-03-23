@@ -32,8 +32,10 @@ By dealing with this “messy” environment, you’ll build real-world problem-
 ---
 
 ## How to Run Each Component
+### Prerequisites: 
+You must have Python, Node.js, and .NET SDK installed locally.
 
-### Running the Vote Service (Python) Locally (No Docker)
+### Running the Vote Service (Python/Flask) Locally (No Docker)
 
 1. Ensure you have Python 3.10+ installed.
 2. Navigate to the `vote` directory:
@@ -42,47 +44,62 @@ By dealing with this “messy” environment, you’ll build real-world problem-
    pip install -r requirements.txt
    python app.py
    ```
-   Access the vote interface at [http://localhost:5000](http://localhost:5000).
+   Access the vote interface at [http://localhost:5000](http://localhost:5000). Check app.py for the port
 
 ### Running Redis Locally (No Docker)
 
-1. Install Redis on your system ([https://redis.io/docs/getting-started/](https://redis.io/docs/getting-started/)).
+1. Install Redis on your system ([https://redis.io/docs/getting-started/](https://redis.io/docs/getting-started/)) or use Docker: redis-server (if installed locally).
 2. Start Redis:
    ```bash
    redis-server
    ```
-   Redis will be available at `localhost:6379`.
+   By default, Redis runs on `localhost:6379`.
 
 ### Running the Worker (C#/.NET) Locally (No Docker)
 
 1. Ensure .NET 7.0 SDK is installed.
-2. Navigate to `worker`:
+2. Navigate to `worker` directory. Run `dotnet build` and then `dotnet run` to start the worker service.
    ```bash
    cd worker
    dotnet restore
    dotnet run
    ```
-   The worker will attempt to connect to Redis and Postgres when available.
+   The worker expects a running Redis and PostgreSQL instance to function correctly. Without them, it will likely fail to connect or idle while waiting.
 
 ### Running Postgres Locally (No Docker)
 
-1. Install Postgres from [https://www.postgresql.org/download/](https://www.postgresql.org/download/).
-2. Start Postgres, note the username and password (default `postgres`/`postgres`):
+1. Install Postgres (via package manager or GUI tools) and ensure it’s running on default port 5432.
+   See [https://www.postgresql.org/download/](https://www.postgresql.org/download/).
+2. Connect to Postgres and and configure credentials as needed,note the username and password (default `postgres`/`postgres`):
+  ```bash
+    psql -U postgres
+    \l
+  ```
+
+3. Create database names "votes".
+  ```bash
+   CREATE DATABASE votes
+   \l
+  \q 
+  ```
+
    ```bash
    # On many systems, Postgres runs as a service once installed.
    ```
    Postgres will be available at `localhost:5432`.
 
-### Running the Result Service (Node.js) Locally (No Docker)
+### Running the Result Service (Node.js/Express) Locally (No Docker)
 
 1. Ensure Node.js 18+ is installed.
-2. Navigate to `result`:
+2. Install dependencies: npm ci (uses package-lock.json)
+3. Navigate to `result` directory:
    ```bash
    cd result
    npm install
    node server.js
    ```
-   Access the results interface at [http://localhost:4000](http://localhost:4000).
+   Run the application: node server.js
+   By default, it may run on http://localhost:80 (check server.js for port or environment variable).
 
 **Note:** To get the entire system working end-to-end (i.e., votes flowing through Redis, processed by the worker, stored in Postgres, and displayed by the result app), you’ll need to ensure each component is running and that connection strings or environment variables point to the correct services.
 
