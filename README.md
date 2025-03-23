@@ -71,7 +71,7 @@ Access the Applications:
 Cast votes and see them update in real time! The **worker** service moves votes from **Redis** to **Postgres** for persistence.
 
 
-### 1.3 Push the docker images to Dockerhub for use in step 4.
+### 1.3 Push the docker images to Dockerhub (for use in step 3).
 ```sh
 docker push your_dockerhub_username/vote:latest
 docker push your_dockerhub_username/result:latest
