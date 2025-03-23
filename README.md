@@ -32,7 +32,7 @@ Once all services are running locally and correctly configured (you might need t
 ```sh
 cd vote
 docker build -t vote:latest .
-docker run -p 8080:80 your_dockerhub_username/vote:latest
+docker run -p 8080:80 vote:latest
 ```
 Visit http://localhost:8080 to see the vote app running in Docker.
 
@@ -41,7 +41,7 @@ Visit http://localhost:8080 to see the vote app running in Docker.
 ```sh
 cd result
 docker build -t result:latest .
-docker run -p 8081:80 your_dockerhub_username/result:latest
+docker run -p 8081:80 result:latest
 ```
 Access http://localhost:8081 for the result app.
 
@@ -49,7 +49,7 @@ Access http://localhost:8081 for the result app.
 ```sh
 cd worker
 docker build -t worker:latest .
-docker run your_dockerhub_username/worker:latest
+docker run worker:latest
 ```
 The worker runs in the background, no direct HTTP port is exposed, but it needs Redis and Postgres reachable.
 
