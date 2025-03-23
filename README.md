@@ -31,7 +31,7 @@ Once all services are running locally and correctly configured (you might need t
 #### Vote (Python)
 ```sh
 cd vote
-docker build -t your_dockerhub_username/vote:latest .
+docker build -t vote:latest .
 docker run -p 8080:80 your_dockerhub_username/vote:latest
 ```
 Visit http://localhost:8080 to see the vote app running in Docker.
@@ -40,7 +40,7 @@ Visit http://localhost:8080 to see the vote app running in Docker.
 #### Result (Node.js)
 ```sh
 cd result
-docker build -t your_dockerhub_username/result:latest .
+docker build -t result:latest .
 docker run -p 8081:80 your_dockerhub_username/result:latest
 ```
 Access http://localhost:8081 for the result app.
@@ -48,7 +48,7 @@ Access http://localhost:8081 for the result app.
 #### Worker (.NET)
 ```sh
 cd worker
-docker build -t your_dockerhub_username/worker:latest .
+docker build -t worker:latest .
 docker run your_dockerhub_username/worker:latest
 ```
 The worker runs in the background, no direct HTTP port is exposed, but it needs Redis and Postgres reachable.
