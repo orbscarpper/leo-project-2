@@ -93,8 +93,8 @@ docker push your_dockerhub_username/worker:latest
  Outbound should allow connections to Redis on port 6379.
 - **Redis SG:** Allows inbound traffic from Vote EC2 instance to Redis port (6379), and allows inbound SSH (port 22) access from the Bastion security group. Permits all outbound traffic with the VPC.
 - **Worker SG:** Allows inbound traffic from Bastion on port 22 (SSH connection). Worker makes connection to Redis and Postgres, therefore it has outbound to Redis & Postgres.
-- **Result SG:** Allows inbound traffic from the ALB (on HTTP port 8080) for accessing the Node.js App and SSH connection from Bastion host. Allows outbound PostgreSQL (port 5432) traffic to the PostgreSQL security group. Allows all outbound traffic to any destination.
 - **Postgres SG:** Allows inbound PostgreSQL (port 5432) traffic from both Worker and Result security groups. Allows SSH connection from Bastion EC2 instance. Permits all outbound traffic with the VPC.
+- **Result SG:** Allows inbound traffic from the ALB (on HTTP port 8080) for accessing the Node.js App and SSH connection from Bastion host. Allows outbound PostgreSQL (port 5432) traffic to the PostgreSQL security group. Allows all outbound traffic to any destination.
 
 
 ## Step 3 - Configuration Management with Ansible
@@ -124,13 +124,25 @@ Since the EC2 instances live in **private subnets** (and do not have public IP a
 
 3. **Install or Use Ansible on the Bastion:**
    - **Approach A:** Install Ansible on the **bastion host** and run playbooks from there. In this project, this approach is used.
-   - **Approach B:** Keep Ansible on your **local machine** but configure SSH proxying (SSH "jump host") to route through the bastion.
+   - **Approach B:** Keep Ansible on your **local machine** but configure SSH proxying (SSH "jump host") so that your connections to the private instances go through the bastion automatically..
 
-#### Update Ansible Inventory and `ssh_config`
+#### How to use Bastion Hosts: 
+You can also do it via inventory files or ~/.ssh/config. For example:
 
-To enable SSH proxying through the Bastion:
-
+**Inventory file approach:**
 ```ini
+[targets]
+target1 ansible_host=10.11.21.169 ansible_user=ubuntu ansible_ssh_private_key_file=./connection-key.pem
+
+[targets:vars]
+ansible_ssh_common_args='-o ProxyCommand="ssh -W %h:%p -i ./connection-key.pem ubuntu@3.70.100.200"'
+
+```
+
+**Use simpler Ansible Inventory and `ssh_config`**
+If using a jump host from your local machine, you can add something like this to your local ~/.ssh/config:
+
+```
 # ~/.ssh/config
 
 Host bastion
@@ -143,10 +155,10 @@ Host ip-10-0-*.ec2.internal
   ProxyJump bastion
   IdentityFile ~/.ssh/mykey.pem
 ```
-
 Then, in your **Ansible inventory**, refer to the private EC2 hosts by their internal DNS names (e.g., `ip-10-0-123-45.ec2.internal`), and Ansible will automatically route through the bastion.
-
 ---
+
+
 
 ## Step 4 - Running the Application End-to-End in AWS
 - Once Docker is installed and images of Mircorservices are pulled, start the containers on their respective EC2 instances(by running the main Playbook.yml).
@@ -154,6 +166,46 @@ Then, in your **Ansible inventory**, refer to the private EC2 hosts by their int
    - **Vote service:** `http://<load_balancer_dns>/vote`
    - **Result service:** `http://<load_balancer_dns>/result`
 - Perform test votes to verify that the results are reflected accordingly and entire system is functioning properly.
+
+## Possible Enhancements
+ 
+
+### 1. Create a Container Volume for PostgreSQL  
+To ensure data persistence, map a named volume or a host path for Postgres data in your Docker configuration.  
+
+Example in `docker-compose.yml`:  
+
+```yaml
+volumes:
+  - postgres_data:/var/lib/postgresql/data
+```
+
+### 2. Adding Availability Zones (Multi-AZ) and Subnets  
+In a production environment, you’d want multiple subnets across different Availability Zones (AZs) for high availability.  
+
+- By placing EC2 instances in more than one AZ, you reduce the risk of downtime if one AZ goes offline.  
+- Subnets in different AZs let your load balancer route traffic to healthy instances in any zone.  
+- Terraform supports creating resources in multiple AZs by specifying `count` or using modules that handle multi-AZ patterns.  
+
+### 3. High Availability (Step by Step)  
+
+1. **Provision subnets** in two or more Availability Zones.  
+2. **Deploy at least two instances** for your “Vote” frontend behind an Application Load Balancer (ALB) in separate AZs.  
+   - This requires at least two private subnets in different AZs.  
+3. **Use an autoscaling group** to automatically scale instances up or down based on demand.  
+4. **Database and caching considerations:**  
+   - Use a managed service or multi-node setup for Redis/Postgres.  
+   - Alternatively, create secondary replicas to enable failover in case of failure.  
+5. **Ensure ALB health checks** are properly configured:  
+   - If one instance fails health checks, traffic is routed to a healthy instance.  
+
+### 4. Logging & Monitoring  
+
+- **Install or configure a monitoring agent** (e.g., CloudWatch Agent) to gather logs from Docker containers into CloudWatch Logs.  
+- **Set up CloudWatch metrics** or use a third-party solution like Datadog to monitor CPU, memory, and container health.  
+- **Define alarms** (e.g., CPU usage, container restart counts) to get alerts when something goes wrong.  
+
+
 
 ## Links
 
