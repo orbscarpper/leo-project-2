@@ -155,9 +155,9 @@ Host ip-10-0-*.ec2.internal
   ProxyJump bastion
   IdentityFile ~/.ssh/mykey.pem
 ```
-Then, in your **Ansible inventory**, refer to the private EC2 hosts by their internal DNS names (e.g., `ip-10-0-123-45.ec2.internal`), and Ansible will automatically route through the bastion.
 ---
 
+Then, in your **Ansible inventory**, refer to the private EC2 hosts by their internal DNS names (e.g., `ip-10-0-123-45.ec2.internal`), and Ansible will automatically route through the bastion.
 
 
 ## Step 4 - Running the Application End-to-End in AWS
