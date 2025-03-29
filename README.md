@@ -9,7 +9,7 @@ Containerize a multi-component Web Application using Docker, provision infrastru
 
 This provides a **scalable, secure, and automated deployment workflow** for the multi-stack application.
 
-## Step 0 - Overview Multistack Voting Application
+## Step 0 - Overview of Multistack Voting Application
 This application consists of multiple services built with different languages and technologies, simulating real-world scenarios where various components interact within a microservices architecture. The application includes:  
 - **Vote (Python/Flask):** A web app for casting votes.  
 - **Redis:** An in-memory queue for temporary vote storage.  
@@ -84,7 +84,14 @@ docker push your_dockerhub_username/worker:latest
 - Create Security Groups for Bastion host and Application Load Balancer.
 - Create 5 EC2 instances (one for each service, one for each Vote, Result, Worker, Redis, and Postgres), placed in private subnet of the VPC.
 - Configure an Application Load Balancer (with two public subnets in different availability zones) that routes traffic to the vote and result services based on URL paths.
-- Store `terraform.tfstate` file in a remote backend (Amazon S3 bucket) and enable state locking with DynamoDB.
+- Store `terraform.tfstate` file in a remote backend (Amazon S3 bucket) and enable state locking with DynamoDB.</br>
+To provision the AWS infrastructure, run the following:
+
+```
+cd terraform
+terraform init
+terraform apply -auto-approve
+```
 
 ### Security Groups:
 
@@ -96,13 +103,18 @@ docker push your_dockerhub_username/worker:latest
 - **Postgres SG:** Allows inbound PostgreSQL (port 5432) traffic from both Worker and Result security groups. Allows SSH connection from Bastion EC2 instance. Permits all outbound traffic with the VPC.
 - **Result SG:** Allows inbound traffic from the ALB (on HTTP port 8080) for accessing the Node.js App and SSH connection from Bastion host. Allows outbound PostgreSQL (port 5432) traffic to the PostgreSQL security group. Allows all outbound traffic to any destination.
 
-
 ## Step 3 - Configuration Management with Ansible
 - Using **Ansible playbooks** to connect to Bastion host (via SSH) and install Docker on newly provisioned EC2 instances.
 - Ensure Docker is running on each instance, and your user is added to the `docker` group to run containers without `sudo`.
 - Deploy Containers by pulling your images from DockerHub on the EC2 instances and run the containers using `docker run`.
 - Ensure **environment variables** are correctly set (e.g., database credentials, Redis hostnames/ private instances I.P addresses).
-- Use **Ansible Vault**, or a secure location for managing secrets (passwords, tokens, private keys, etc.).
+- Use **Ansible Vault**, or a secure location for managing secrets (passwords, tokens, private keys, etc.).</br>
+To configure the EC2 instances, run the following:
+
+```
+cd ansible
+ansible-playbook -i inventory.ini playbook.yml
+```
 
 ### Managing SSH Keys for Ansible
 To securely manage SSH connections to the EC2 instances:
@@ -157,7 +169,8 @@ Host ip-10-0-*.ec2.internal
 ```
 ---
 
-Then, in your **Ansible inventory**, refer to the private EC2 hosts by their internal DNS names (e.g., `ip-10-0-123-45.ec2.internal`), and Ansible will automatically route through the bastion.
+Then, in your **Ansible inventory**, refer to the private EC2 hosts by their internal DNS names (e.g., `ip-10-0-123-45.ec2.internal`), and Ansible will automatically route through the bastion.</br>
+**Important**: Make sure that your SSH private key has the correct permissions: ```chmod 400 <YOUR_PRIVATE_KEY_PATH>```
 
 
 ## Step 4 - Running the Application End-to-End in AWS
