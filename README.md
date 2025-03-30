@@ -1,5 +1,5 @@
 # DevOps Infrastructure Automation
-Containerize a multi-component Web Application using Docker, provision infrastructure on AWS with Terraform and configuration management using Ansible.
+Containerize a [multi-component Web Application](https://github.com/Pokfinner/ironhack-project-1) using Docker, provision infrastructure on AWS with Terraform and configuration management using Ansible.
 
 ## Objectives:
 1. Provision AWS infrastructure using **Terraform**  
@@ -10,7 +10,7 @@ Containerize a multi-component Web Application using Docker, provision infrastru
 This provides a **scalable, secure, and automated deployment workflow** for the multi-stack application.
 
 ## Step 0 - Overview of Multistack Voting Application
-This application consists of multiple services built with different languages and technologies, simulating real-world scenarios where various components interact within a microservices architecture. The application includes:  
+This [application](https://github.com/Pokfinner/ironhack-project-1) consists of multiple services built with different languages and technologies, simulating real-world scenarios where various components interact within a microservices architecture. The application includes:  
 - **Vote (Python/Flask):** A web app for casting votes.  
 - **Redis:** An in-memory queue for temporary vote storage.  
 - **Worker (.NET 7.0):** Processes votes from Redis and stores them in a database. Worker reads from Redis and writes to Postgres 
