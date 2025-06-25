@@ -1,0 +1,63 @@
+name: Build & Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Set up Docker
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    # Step 3: Cache Docker layers to speed up the build process
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-docker-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-docker-
+
+    # Step 4: Build Docker images for each microservice (vote, result, worker)
+    - name: Build and push vote image
+      run: |
+        docker build -t yourusername/vote:${{ github.sha }} ./vote
+        docker push yourusername/vote:${{ github.sha }}
+
+    - name: Build and push result image
+      run: |
+        docker build -t yourusername/result:${{ github.sha }} ./result
+        docker push yourusername/result:${{ github.sha }}
+
+    - name: Build and push worker image
+      run: |
+        docker build -t yourusername/worker:${{ github.sha }} ./worker
+        docker push yourusername/worker:${{ github.sha }}
+
+    # Step 5: Docker login to Docker Hub
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+      
+    # Step 6: Push images to Docker Hub with updated tags
+    - name: Push Docker images to Docker Hub
+      run: |
+        docker push yourusername/vote:${{ github.sha }}
+        docker push yourusername/result:${{ github.sha }}
+        docker push yourusername/worker:${{ github.sha }}
