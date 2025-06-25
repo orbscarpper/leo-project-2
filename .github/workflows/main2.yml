@@ -1,0 +1,52 @@
+name: Deploy to Kubernetes
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:  # Allows manual triggering from the GitHub UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Set up AWS CLI
+    - name: Set up AWS CLI
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    # Step 3: Install kubectl
+    - name: Install kubectl
+      run: |
+        curl -LO https://dl.k8s.io/release/v1.24.0/bin/linux/amd64/kubectl
+        chmod +x ./kubectl
+        sudo mv ./kubectl /usr/local/bin/kubectl
+        kubectl version --client
+
+    # Step 4: Configure kubectl to use your Kubernetes cluster (EKS)
+    - name: Configure kubectl for EKS
+      run: |
+        aws eks --region ${{ secrets.AWS_REGION }} update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
+      
+    # Step 5: Apply Kubernetes manifests
+    - name: Apply Kubernetes manifests
+      run: |
+        kubectl apply -f k8s-manifests/
+
+    # Optional Step: Verify the deployment (can be adjusted as needed)
+    - name: Verify the Kubernetes deployments
+      run: |
+        kubectl rollout status deployment/my-deployment-name
