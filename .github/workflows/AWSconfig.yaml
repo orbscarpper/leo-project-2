@@ -1,12 +1,34 @@
-- name: Configure AWS
-  uses: aws-actions/configure-aws-credentials@v1
-  with:
-    aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-    aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    aws-region: us-east-1
+name: Deploy to EKS Cluster
 
-- name: Update Kube Config
-  run: eksctl utils write-kubeconfig --cluster voting-app-cluster --region us-east-1
+on:
+  
 
-- name: Apply Manifests
-  run: kubectl apply -f k8s/
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Update Kube Config
+      run: |
+        # Use eksctl to write the kubeconfig
+        eksctl utils write-kubeconfig --cluster voting-app-cluster --region us-east-1
+
+    - name: Apply Kubernetes Manifests
+      run: |
+        # Apply the Kubernetes manifests
+        kubectl apply -f k8s/
+
+    - name: Verify Kubernetes Deployments
+      run: |
+        # Verify that the pods have been deployed successfully
+        kubectl get pods
